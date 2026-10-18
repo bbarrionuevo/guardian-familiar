@@ -1,0 +1,19 @@
+# Configuración del Worker. El id del espacio KV se reemplaza en el despliegue (secreto KV_ID).
+name = "guardian-familiar"
+main = "src/servidor/worker.ts"
+compatibility_date = "2025-09-15"
+compatibility_flags = ["nodejs_compat"]
+
+[[kv_namespaces]]
+binding = "GUARDIAN_KV"
+id = "KV_ID_PENDIENTE"
+
+[ai]
+binding = "AI"
+
+[vars]
+BOT_USERNAME = "BOT_USERNAME_PENDIENTE"
+GUARDIAN_MODELO = "claude-opus-5-5"
+
+[observability]
+enabled = true

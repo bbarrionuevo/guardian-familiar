@@ -1,0 +1,30 @@
+# Controles de cada cambio: tipos, pruebas y evaluación del motor con el banco de mensajes.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  controles:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - name: Evaluación solo con reglas (banco visible)
+        run: npx tsx scripts/evaluar.ts --solo-reglas
+      - name: Evaluación solo con reglas (banco ciego, solo totales)
+        run: npx tsx scripts/evaluar.ts --solo-reglas --ciego
+      - name: El Worker se empaqueta
+        run: npx wrangler deploy --dry-run --outdir /tmp/worker

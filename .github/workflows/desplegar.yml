@@ -1,0 +1,72 @@
+# Publica el Worker en Cloudflare y conecta el bot de Telegram.
+# Necesita estos secretos: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, KV_ID, BOT_TOKEN,
+# BOT_USERNAME, TELEGRAM_SECRET, ANTHROPIC_API_KEY y METRICAS_CLAVE. WORKER_URL es opcional:
+# si falta, se usa la dirección *.workers.dev que informa Cloudflare al publicar.
+name: Desplegar
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desplegar
+  cancel-in-progress: false
+
+jobs:
+  desplegar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - name: Completar la configuración
+        env:
+          KV_ID: ${{ secrets.KV_ID }}
+          BOT_USERNAME: ${{ secrets.BOT_USERNAME }}
+        run: |
+          test -n "$KV_ID" && test -n "$BOT_USERNAME"
+          sed -i "s/KV_ID_PENDIENTE/${KV_ID}/; s/BOT_USERNAME_PENDIENTE/${BOT_USERNAME}/" wrangler.toml
+      - name: Publicar el Worker
+        id: publicar
+        env:
+          WORKER_URL: ${{ secrets.WORKER_URL }}
+        run: |
+          npx wrangler deploy | tee /tmp/deploy.log
+          url="${WORKER_URL:-$(grep -oE 'https://[a-z0-9.-]+\.workers\.dev' /tmp/deploy.log | head -1)}"
+          test -n "$url"
+          echo "url=${url%/}" >> "$GITHUB_OUTPUT"
+      - name: Cargar los secretos del Worker
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          TELEGRAM_SECRET: ${{ secrets.TELEGRAM_SECRET }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          METRICAS_CLAVE: ${{ secrets.METRICAS_CLAVE }}
+        run: |
+          node -e '
+            const keys = ["BOT_TOKEN", "TELEGRAM_SECRET", "ANTHROPIC_API_KEY", "METRICAS_CLAVE"];
+            const out = Object.fromEntries(keys.filter((k) => process.env[k]).map((k) => [k, process.env[k]]));
+            require("fs").writeFileSync("/tmp/secretos.json", JSON.stringify(out));
+          '
+          npx wrangler secret bulk /tmp/secretos.json
+          rm /tmp/secretos.json
+      - name: Conectar el bot de Telegram
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          TELEGRAM_SECRET: ${{ secrets.TELEGRAM_SECRET }}
+          WORKER_URL: ${{ steps.publicar.outputs.url }}
+        run: npx tsx scripts/configurar-webhook.ts
+      - name: Control de vida
+        env:
+          WORKER_URL: ${{ steps.publicar.outputs.url }}
+        run: curl -fsS "$WORKER_URL/salud"

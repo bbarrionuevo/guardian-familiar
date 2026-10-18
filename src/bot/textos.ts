@@ -1,0 +1,109 @@
+// Textos del bot. Italiano con «tu», español con «usted».
+
+import type { Lang } from '../motor/tipos';
+
+interface BotTexts {
+  welcome: string;
+  help: string;
+  privacy: string;
+  langSet: string;
+  unsupported: string;
+  tooBig: string;
+  limit: (n: number) => string;
+  inviteForChild: (link: string) => string;
+  inviteToForward: (link: string) => string;
+  linkedParent: (child: string) => string;
+  linkedChild: (parent: string) => string;
+  inviteInvalid: string;
+  inviteSelf: string;
+  unlinked: string;
+  nothingToUnlink: string;
+  familyNotified: string;
+}
+
+export const TEXTS: Record<Lang, BotTexts> = {
+  es: {
+    welcome:
+      '👋 Hola, soy Guardián. Si le llega un mensaje, una foto o un audio que le parece raro, reenvíemelo y le digo si tiene señales de estafa.\n\n' +
+      '• Para reenviar: mantenga apretado el mensaje, toque «Reenviar» y elija Guardián.\n' +
+      '• También puede pegar el texto o mandarme una captura de pantalla.\n\n' +
+      'No guardo sus mensajes. Nunca le voy a pedir datos, claves ni plata.',
+    help:
+      'Reenvíeme el mensaje que le parece raro (texto, captura o audio) y le contesto con el nivel de riesgo y qué hacer.\n\n' +
+      '/familia: crea un enlace para que un familiar quede conectado con usted.\n' +
+      '/desvincular: borra los vínculos con su familia.\n' +
+      '/privacidad: qué hago con sus mensajes.\n' +
+      '/lingua: passa all’italiano.',
+    privacy:
+      '🔒 Privacidad\n' +
+      '• No guardo el texto, las fotos ni los audios que me manda: los reviso y los descarto.\n' +
+      '• Para revisarlos uso reglas propias y, cuando hace falta, la IA de Anthropic (Claude). Según sus condiciones, Anthropic no usa estos mensajes para entrenar su IA.\n' +
+      '• Los audios los pasa a texto el servicio de Cloudflare.\n' +
+      '• Guardo solo su idioma, su nombre de Telegram y con quién está vinculado.\n' +
+      '• /desvincular borra los vínculos.',
+    langSet: 'Listo, le hablo en español.',
+    unsupported: 'Puedo revisar texto, capturas de pantalla y audios. Reenvíeme el mensaje que le parece raro.',
+    tooBig: 'El archivo es muy grande para revisarlo. Mándeme una captura de pantalla o copie el texto.',
+    limit: (n) => `Hoy ya revisé ${n} mensajes suyos. Mañana sigo. Mientras tanto: no pague ni dé datos, y ante la duda consulte a un familiar.`,
+    inviteForChild: (link) =>
+      `Para que le avise cuando su familiar reciba un mensaje de riesgo alto, mándele el mensaje de abajo y pídale que toque el enlace. El enlace vale 7 días.\n\n${link}`,
+    inviteToForward: (link) => `Hola, te paso Guardián, un asistente que revisa mensajes sospechosos. Con este enlace quedamos conectados: ${link}`,
+    linkedParent: (child) => `✅ Listo. Cuando le llegue un mensaje de riesgo alto, también le aviso a ${child}.`,
+    linkedChild: (parent) => `✅ Ya está: ${parent} abrió su enlace. Le voy a avisar cuando reciba un mensaje de riesgo alto.`,
+    inviteInvalid: 'Ese enlace ya no vale. Pídale a su familiar uno nuevo.',
+    inviteSelf: 'Este enlace es para su familiar, no para usted. Mándeselo por WhatsApp o por Telegram.',
+    unlinked: 'Listo, borré los vínculos con su familia.',
+    nothingToUnlink: 'No tiene vínculos con ningún familiar.',
+    familyNotified: '📣 Le avisé a su familiar.',
+  },
+  it: {
+    welcome:
+      '👋 Ciao, sono Guardiano. Se ti arriva un messaggio, una foto o un audio che ti sembra strano, inoltramelo e ti dico se ha segnali di truffa.\n\n' +
+      '• Per inoltrare: tieni premuto il messaggio, tocca «Inoltra» e scegli Guardiano.\n' +
+      '• Puoi anche incollare il testo o mandarmi uno screenshot.\n\n' +
+      'Non conservo i tuoi messaggi. Non ti chiederò mai dati, password o soldi.',
+    help:
+      'Inoltrami il messaggio che ti sembra strano (testo, screenshot o audio) e ti rispondo con il livello di rischio e cosa fare.\n\n' +
+      '/famiglia: crea un link per collegare un familiare.\n' +
+      '/scollega: cancella i collegamenti con la tua famiglia.\n' +
+      '/privacy: cosa faccio con i tuoi messaggi.\n' +
+      '/idioma: cambia a español.',
+    privacy:
+      '🔒 Privacy\n' +
+      '• Non conservo il testo, le foto o gli audio che mi mandi: li controllo e li scarto.\n' +
+      "• Per controllarli uso regole mie e, quando serve, l'IA di Anthropic (Claude). Secondo le sue condizioni, Anthropic non usa questi messaggi per addestrare la sua IA.\n" +
+      '• Gli audio vengono trascritti dal servizio di Cloudflare.\n' +
+      '• Conservo solo la tua lingua, il tuo nome su Telegram e con chi sei collegato.\n' +
+      '• /scollega cancella i collegamenti.',
+    langSet: 'Fatto, ti parlo in italiano.',
+    unsupported: 'Posso controllare testo, screenshot e audio. Inoltrami il messaggio che ti sembra strano.',
+    tooBig: 'Il file è troppo grande da controllare. Mandami uno screenshot o copia il testo.',
+    limit: (n) => `Oggi ho già controllato ${n} tuoi messaggi. Continuo domani. Nel frattempo: non pagare e non dare dati, e nel dubbio chiedi a un familiare.`,
+    inviteForChild: (link) =>
+      `Per ricevere un avviso quando un tuo familiare riceve un messaggio a rischio alto, mandagli il messaggio qui sotto e chiedigli di aprire il link. Il link vale 7 giorni.\n\n${link}`,
+    inviteToForward: (link) => `Ciao, ti mando Guardiano, un assistente che controlla i messaggi sospetti. Con questo link restiamo collegati: ${link}`,
+    linkedParent: (child) => `✅ Fatto. Quando ti arriva un messaggio a rischio alto, avviso anche ${child}.`,
+    linkedChild: (parent) => `✅ Fatto: ${parent} ha aperto il tuo link. Ti avviserò quando riceve un messaggio a rischio alto.`,
+    inviteInvalid: 'Questo link non è più valido. Chiedi al tuo familiare di mandartene uno nuovo.',
+    inviteSelf: 'Questo link è per il tuo familiare, non per te. Mandaglielo su WhatsApp o Telegram.',
+    unlinked: 'Fatto, ho cancellato i collegamenti con la tua famiglia.',
+    nothingToUnlink: 'Non sei collegato a nessun familiare.',
+    familyNotified: '📣 Ho avvisato il tuo familiare.',
+  },
+};
+
+// Comandos en los dos idiomas.
+export const COMMANDS: Record<string, 'start' | 'help' | 'family' | 'unlink' | 'privacy' | 'lang_es' | 'lang_it'> = {
+  start: 'start',
+  ayuda: 'help',
+  aiuto: 'help',
+  help: 'help',
+  familia: 'family',
+  famiglia: 'family',
+  desvincular: 'unlink',
+  scollega: 'unlink',
+  privacidad: 'privacy',
+  privacy: 'privacy',
+  idioma: 'lang_es',
+  lingua: 'lang_it',
+};

@@ -1,0 +1,48 @@
+# Evaluación completa con la IA. Cuesta plata (unas 220 consultas por corrida), por eso es manual.
+name: Evaluar con IA
+
+on:
+  workflow_dispatch:
+    inputs:
+      modelo:
+        description: Modelo de Claude
+        default: claude-opus-5-5
+        type: choice
+        options: [claude-opus-5-5, claude-haiku-5-5, claude-sonnet-5-5]
+
+permissions:
+  contents: read
+
+jobs:
+  evaluar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      GUARDIAN_MODELO: ${{ inputs.modelo }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Falta la clave
+        if: env.ANTHROPIC_API_KEY == ''
+        run: |
+          echo "Cargá el secreto ANTHROPIC_API_KEY en Settings → Secrets and variables → Actions."
+          exit 1
+      - name: Banco visible
+        run: npx tsx scripts/evaluar.ts | tee informe-visible.txt
+      - name: Banco ciego (solo totales)
+        run: npx tsx scripts/evaluar.ts --ciego | tee informe-ciego.txt
+      - name: Resumen
+        run: |
+          {
+            echo "## Evaluación con ${GUARDIAN_MODELO}"
+            echo '```'
+            cat informe-visible.txt
+            echo
+            cat informe-ciego.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
