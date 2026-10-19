@@ -35,6 +35,10 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      # La web se arma al final: las pruebas generan su propia versión de public/ (sin estos datos)
+      # y la que se publica tiene que ser esta.
       - run: npm run build:web
         env:
           # El usuario del bot, para los enlaces a Telegram de la web.
@@ -43,8 +47,6 @@ jobs:
           # repositorio: se publican en la página, así que no son secretos de verdad).
           SITIO_RESPONSABLE: ${{ vars.SITIO_RESPONSABLE || secrets.SITIO_RESPONSABLE }}
           SITIO_CONTACTO: ${{ vars.SITIO_CONTACTO || secrets.SITIO_CONTACTO }}
-      - run: npm run typecheck
-      - run: npm test
       - name: Completar la configuración
         env:
           KV_ID: ${{ secrets.KV_ID }}
