@@ -22,6 +22,8 @@ import {
   termsPath,
   urgentPage,
   urgentPath,
+  vcard,
+  vcardPath,
   type Example,
 } from '../src/web/plantilla';
 import { WEB } from '../src/web/textos-web';
@@ -144,6 +146,7 @@ function main() {
     write(familyPath(lang), familyPage(lang, site));
     write(urgentPath(lang), urgentPage(lang, site));
     write(termsPath(lang), termsPage(lang, site));
+    if (site.whatsapp) write(vcardPath(lang).slice(1), vcard(lang, site));
     write(`${lang}/manifest.webmanifest`, manifest(lang));
     urls.push(homePath(lang), familyPath(lang), urgentPath(lang), privacyPath(lang), termsPath(lang));
     for (const g of GUIDES) {

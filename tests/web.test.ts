@@ -5,7 +5,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import worker, { type Env } from '../src/servidor/worker';
 import { GUIDES } from '../src/web/guias';
 import { siteConfig } from '../src/web/config';
-import { guidePath, privacyPage } from '../src/web/plantilla';
+import { familyPage, guidePath, homePage, privacyPage, vcard } from '../src/web/plantilla';
 import { fakeCounters } from './ayuda';
 
 const ROOT = join(import.meta.dirname, '..');
@@ -116,6 +116,22 @@ describe('web generada', () => {
     const html = privacyPage('it', siteConfig({ SITIO_RESPONSABLE: 'Pausa', SITIO_CONTACTO: 'ayuda@example.org' }));
     expect(html).toContain('Titolare del trattamento: Pausa');
     expect(html).toContain('href="mailto:ayuda@example.org"');
+  });
+
+  it('WhatsApp aparece solo cuando el sitio tiene número', () => {
+    expect(read('es/')).not.toContain('wa-card');
+    expect(existsSync(join(PUBLIC, 'es/pausa.vcf'))).toBe(false);
+    expect(read('es/familia/')).toContain('<h2>1. Instale la app</h2>');
+
+    const site = siteConfig({ SITIO_WHATSAPP: '+54 9 11 7817-1273' });
+    const home = homePage('es', site);
+    expect(home).toContain('href="https://wa.me/5491178171273?text=Hola"');
+    expect(home).toContain('href="/es/pausa.vcf"');
+    const fam = familyPage('it', site);
+    expect(fam).toContain('<h2>1. Salva Pausa su WhatsApp</h2>');
+    expect(fam).toContain('<h2>2. Installa l’app</h2>');
+    expect(fam).toContain('Scrivi /famiglia a Pausa');
+    expect(vcard('es', site)).toContain('TEL;TYPE=CELL:+5491178171273');
   });
 
   it('el sitemap lista todas las páginas', () => {

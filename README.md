@@ -56,35 +56,41 @@ Los audios se pasan a texto con Whisper de Cloudflare. No se guarda el texto, la
 5. **Publicar.** En *Actions → Desplegar → Run workflow*. Al terminar, el bot ya responde en Telegram.
 6. **Medir la IA.** En *Actions → Evaluar con IA → Run workflow*. El bot usa `claude-haiku-5-5` (se cambia en `GUARDIAN_MODELO` de `wrangler.toml`); se puede comparar con otro modelo eligiéndolo en la lista.
 
-## WhatsApp (cuando quieras activarlo)
+## WhatsApp
 
-El código ya está listo. Mientras falten estas claves, el canal queda apagado y el resto funciona igual.
+El código está listo. Mientras falten estas claves, el canal queda apagado y el resto funciona igual. El número de Pausa es el **+54 9 11 7817-1273** (chip argentino). **No se instala WhatsApp en ese chip:** un número que usa la API de Meta no puede estar en la app. El chip tiene que seguir activo, porque Meta manda los códigos de verificación por SMS.
 
-1. **App de Meta.** En developers.facebook.com, creá una app de tipo «Business» y sumale el producto «WhatsApp».
-2. **Número de prueba.** En *WhatsApp → API Setup*, Meta da un número de prueba gratis que puede escribir hasta a 5 teléfonos que agregues. Alcanza para probar con la familia. Para un número propio hace falta un teléfono que no esté usando WhatsApp y, para pasar de los límites iniciales, verificar el negocio.
+1. **App de Meta.** En developers.facebook.com, creá una app de tipo «Business» llamada «Pausa». Te pide una cuenta comercial: se crea gratis, sin ser empresa. Sumale el producto «WhatsApp».
+2. **Número.** En *WhatsApp → API Setup → Add phone number*:
+   - nombre visible «Pausa»;
+   - Argentina (+54), `11 7817 1273` (si no lo acepta, `9 11 7817 1273`);
+   - verificalo con el código que llega al chip.
+   Sin verificar el negocio, Meta deja contestar a todos los que escriben y mandar unos 250 mensajes por día que inicia Pausa (los avisos a la familia). El nombre «Pausa» aprobado en el chat llega con la verificación del negocio.
 3. **Datos que hay que copiar:**
-   - el *Phone number ID*, de la misma página;
+   - el *Phone number ID* del número, en la misma página;
    - el *App Secret*, en *App settings → Basic*;
-   - un token permanente: en la configuración del negocio, *System users*, creá un usuario y generá un token con el permiso `whatsapp_business_messaging`. El token de la página de prueba vence a las 24 horas.
-4. **Webhook.** En *WhatsApp → Configuration*:
-   - poné como URL `https://pausa.family/whatsapp/webhook`;
-   - como «Verify token», una contraseña inventada (la misma que va en `WHATSAPP_VERIFY_TOKEN`);
-   - suscribite al campo `messages`.
-5. **Plantilla del aviso a la familia (opcional pero recomendable).** WhatsApp solo deja escribirle a alguien que no habló con el bot en las últimas 24 horas con una plantilla aprobada. Creá una de categoría «Utility» llamada `alerta_familia`, en español y en italiano:
-   - es: `⚠️ {{1}} recibió un mensaje con riesgo alto ({{2}}). Le respondí: «{{3}}». Si puede, llame ahora a su familiar.`
-   - it: `⚠️ {{1}} ha ricevuto un messaggio a rischio alto ({{2}}). Ho risposto: «{{3}}». Se puoi, chiama subito il tuo familiare.`
-6. **Secretos en GitHub**, y después *Desplegar*:
+   - un token que no vence: en la configuración del negocio, *System users*, creá un usuario administrador, asignale la app y la cuenta de WhatsApp, y generá un token con `whatsapp_business_messaging` y `whatsapp_business_management`.
+4. **Secretos en GitHub**, y después *Desplegar* (antes del webhook: Meta lo comprueba en el momento):
 
    | Secreto | Qué es |
    |---|---|
-   | `WHATSAPP_TOKEN` | El token permanente |
+   | `WHATSAPP_TOKEN` | El token que no vence |
    | `WHATSAPP_PHONE_ID` | El Phone number ID |
-   | `WHATSAPP_NUMBER` | El número del bot con código de país, sin «+» (por ejemplo `393331234567`) |
+   | `WHATSAPP_NUMBER` | `5491178171273` |
    | `WHATSAPP_APP_SECRET` | El App Secret |
-   | `WHATSAPP_VERIFY_TOKEN` | La contraseña inventada del webhook |
-   | `WHATSAPP_TEMPLATE_ALERTA` | `alerta_familia`, cuando Meta apruebe la plantilla |
+   | `WHATSAPP_VERIFY_TOKEN` | Una contraseña inventada para el webhook |
+   | `WHATSAPP_TEMPLATE_ALERTA` | `alerta_familia`, cuando Meta apruebe la plantilla (paso 7) |
 
-Las respuestas a quien le escribe al bot no tienen costo en la tarifa actual de Meta; los avisos con plantilla cuestan centavos según el país. El bot es de un servicio concreto (revisar mensajes), que es lo que Meta permite desde 2026.
+5. **Webhook.** En *WhatsApp → Configuration*:
+   - URL: `https://pausa.family/whatsapp/webhook`;
+   - «Verify token»: la misma contraseña de `WHATSAPP_VERIFY_TOKEN`;
+   - suscribite al campo `messages`.
+6. **Prueba y web.** Mandá un mensaje de estafa al número desde tu WhatsApp personal. Si Pausa contesta, cargá la variable `SITIO_WHATSAPP` = `5491178171273` y desplegá: la web pasa a mostrar «Abrir Pausa en WhatsApp», el contacto para guardar y el paso de WhatsApp en la página para la familia.
+7. **Plantilla del aviso a la familia.** WhatsApp solo deja escribirle a alguien que no habló con Pausa en las últimas 24 horas con una plantilla aprobada. Creá una de categoría «Utility» llamada `alerta_familia`, en español y en italiano, y cargá una forma de pago en *WhatsApp Manager* (cuesta centavos por aviso):
+   - es: `⚠️ {{1}} recibió un mensaje con riesgo alto ({{2}}). Le respondí: «{{3}}». Si puede, llame ahora a su familiar.`
+   - it: `⚠️ {{1}} ha ricevuto un messaggio a rischio alto ({{2}}). Ho risposto: «{{3}}». Se puoi, chiama subito il tuo familiare.`
+
+Las respuestas a quien le escribe a Pausa no tienen costo en la tarifa actual de Meta. Pausa es un servicio concreto (revisar mensajes), que es lo que Meta permite desde 2026.
 
 ## Uso
 

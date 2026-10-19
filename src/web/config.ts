@@ -8,6 +8,9 @@ export interface SiteConfig {
   // página no muestra ese párrafo.
   responsable?: string;
   contacto?: string;
+  // Número de Pausa en WhatsApp, con código de país y sin «+» (SITIO_WHATSAPP). Sin él, la web no
+  // muestra WhatsApp: se carga recién cuando el canal está probado.
+  whatsapp?: string;
 }
 
 export function siteConfig(env: Record<string, string | undefined> = {}): SiteConfig {
@@ -16,5 +19,6 @@ export function siteConfig(env: Record<string, string | undefined> = {}): SiteCo
     botUsername: (env.BOT_USERNAME || 'PausaFamilyBot').replace(/^@/, ''),
     responsable: env.SITIO_RESPONSABLE?.trim() || undefined,
     contacto: env.SITIO_CONTACTO?.trim() || undefined,
+    whatsapp: env.SITIO_WHATSAPP?.replace(/\D/g, '') || undefined,
   };
 }

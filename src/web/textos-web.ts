@@ -49,6 +49,8 @@ export interface WebTexts {
   notFoundTitle: string;
   notFoundText: string;
   family: FamilyTexts;
+  // Pausa en WhatsApp: tarjeta del inicio, contacto para guardar y enlace del pie.
+  whatsapp: { h2: string; text: string; open: string; save: string; greeting: string; vcardNote: string };
   // Página «ya pagué o di mis datos». Los pasos están en src/bot/urgente.ts.
   urgent: { title: string; description: string; intro: string; sourcesH2: string; link: string };
 }
@@ -70,8 +72,12 @@ export interface FamilyTexts {
   title: string;
   description: string;
   intro: string[];
-  // «extra» dice qué va debajo del paso: el botón de instalar, el formulario, la prueba o Telegram.
-  steps: { h2: string; text: string[]; extra?: 'install' | 'contact' | 'test' | 'telegram' }[];
+  // «extra» dice qué va debajo del paso: WhatsApp, el botón de instalar, el formulario, la prueba o
+  // el aviso automático. El paso de WhatsApp aparece solo si el sitio tiene número (SITIO_WHATSAPP).
+  // Los pasos se numeran solos, menos el del aviso automático, que es opcional.
+  steps: { h2: string; text: string[]; extra?: 'whatsapp' | 'install' | 'contact' | 'test' | 'telegram' }[];
+  // Texto del paso del aviso automático cuando Pausa también está en WhatsApp.
+  autoAlertWhatsapp: string[];
   iphone: string;
   nameLabel: string;
   namePlaceholder: string;
@@ -142,6 +148,14 @@ export const WEB: Record<Lang, WebTexts> = {
     sharedBack: 'Revisar otro mensaje',
     notFoundTitle: 'Página no encontrada',
     notFoundText: 'Esta página no existe. Puede revisar un mensaje desde el inicio.',
+    whatsapp: {
+      h2: 'Por WhatsApp, sin instalar nada',
+      text: 'Guarde a Pausa en sus contactos y reenvíele el mensaje raro, como si se lo mandara a un familiar. Le contesta en segundos.',
+      open: 'Abrir Pausa en WhatsApp',
+      save: 'Guardar el contacto de Pausa',
+      greeting: 'Hola',
+      vcardNote: 'Reenvíe aquí los mensajes raros para saber si son una estafa.',
+    },
     urgent: {
       title: 'Me estafaron: qué hacer ahora si ya pagó o dio sus datos',
       description:
@@ -167,18 +181,26 @@ export const WEB: Record<Lang, WebTexts> = {
         'En dos minutos: instale la app en el teléfono de su mamá o su papá, guarde su número para que lo llamen con un toque y practiquen juntos con un mensaje de prueba.',
       intro: [
         'Las estafas por mensaje funcionan porque meten prisa: «es urgente», «hoy mismo», «su cuenta se bloquea». Pausa sirve para frenar ese impulso. Antes de responder o pagar, su mamá o su papá le manda el mensaje a Pausa y recibe una respuesta clara, con una sola cosa para hacer.',
-        'Lo mejor es dejarlo listo juntos, con el teléfono de ellos en la mano. Son cinco pasos y llevan unos dos minutos.',
+        'Lo mejor es dejarlo listo juntos, con el teléfono de ellos en la mano. Son pocos pasos y llevan unos dos minutos.',
       ],
       steps: [
         {
-          h2: '1. Instale la app',
+          h2: 'Guarde a Pausa en WhatsApp',
+          extra: 'whatsapp',
+          text: [
+            'En el teléfono de ellos, toque «Guardar el contacto de Pausa»: queda agendado como «Pausa». Después toque «Abrir Pausa en WhatsApp» y manden un saludo, así el chat ya queda a mano.',
+            'Desde ahí, ante un mensaje raro: se mantiene apretado, se toca «Reenviar» y se elige Pausa.',
+          ],
+        },
+        {
+          h2: 'Instale la app',
           extra: 'install',
           text: [
             'Abra esta página en el teléfono de ellos, con Chrome. Toque el botón de abajo o, si no aparece, los tres puntos ⋮ de arriba y «Instalar aplicación». Queda el ícono de Pausa en la pantalla.',
           ],
         },
         {
-          h2: '2. Guarde su nombre y su número',
+          h2: 'Guarde su nombre y su número',
           extra: 'contact',
           text: [
             'Cuando Pausa vea un mensaje con riesgo, va a mostrar un botón grande para llamarlo a usted y otro para escribirle por WhatsApp. Así, en el momento de la duda, hablar con usted está a un toque.',
@@ -186,21 +208,21 @@ export const WEB: Record<Lang, WebTexts> = {
           ],
         },
         {
-          h2: '3. Hagan una prueba juntos',
+          h2: 'Hagan una prueba juntos',
           extra: 'test',
           text: [
             'Toque «Cargar un mensaje de prueba» y después «Revisar mensaje». Van a ver cómo responde Pausa ante una estafa y el botón para llamarlo a usted.',
           ],
         },
         {
-          h2: '4. Explique la regla',
+          h2: 'Explique la regla',
           text: [
             'Una sola regla, fácil de recordar: si llega algo raro, antes de responder, se lo mandamos a Pausa.',
             'En WhatsApp: se mantiene apretado el mensaje, se tocan los tres puntos ⋮, «Compartir» y «Pausa». También sirve para SMS, emails y capturas de pantalla.',
           ],
         },
         {
-          h2: '5. Elijan una palabra clave familiar',
+          h2: 'Elijan una palabra clave familiar',
           text: [
             'Elijan juntos una palabra o una pregunta que solo conozca la familia. Si alguien escribe o llama diciendo que es un hijo o un nieto y pide plata, se le pregunta la palabra clave.',
             'Un estafador no la sabe, aunque escriba desde un número nuevo, mande una foto de perfil conocida o imite una voz.',
@@ -213,6 +235,9 @@ export const WEB: Record<Lang, WebTexts> = {
             'Con el bot de Telegram, cuando a su mamá o su papá le llega un mensaje de riesgo alto, el aviso le llega a usted sin que tengan que hacer nada. En el bot escriba /familia y mándele a ellos el enlace que le da.',
           ],
         },
+      ],
+      autoAlertWhatsapp: [
+        'Con Pausa en WhatsApp o en Telegram, cuando a su mamá o su papá le llega un mensaje de riesgo alto, el aviso le llega a usted sin que tengan que hacer nada. Escríbale /familia a Pausa desde su propio teléfono y mándeles a ellos el enlace que le da.',
       ],
       iphone:
         'En iPhone: abra la página con Safari, toque Compartir y «Agregar a inicio». Ahí todavía no se puede compartir directo desde WhatsApp: hay que copiar el mensaje y pegarlo en Pausa.',
@@ -285,6 +310,14 @@ export const WEB: Record<Lang, WebTexts> = {
     sharedBack: 'Controlla un altro messaggio',
     notFoundTitle: 'Pagina non trovata',
     notFoundText: 'Questa pagina non esiste. Puoi controllare un messaggio dalla pagina iniziale.',
+    whatsapp: {
+      h2: 'Su WhatsApp, senza installare niente',
+      text: 'Salva Pausa nei contatti e inoltra il messaggio strano a Pausa, come se lo mandassi a un familiare. Ti risponde in pochi secondi.',
+      open: 'Apri Pausa su WhatsApp',
+      save: 'Salva il contatto di Pausa',
+      greeting: 'Ciao',
+      vcardNote: 'Inoltra qui i messaggi strani per sapere se sono una truffa.',
+    },
     urgent: {
       title: 'Truffa: cosa fare subito se hai già pagato o dato i tuoi dati',
       description:
@@ -310,18 +343,26 @@ export const WEB: Record<Lang, WebTexts> = {
         'In due minuti: installa l’app sul telefono di tua mamma o tuo papà, salva il tuo numero per farti chiamare con un tocco e fate insieme una prova con un messaggio finto.',
       intro: [
         'Le truffe via messaggio funzionano perché mettono fretta: «è urgente», «entro oggi», «il conto verrà bloccato». Pausa serve a fermare quell’impulso. Prima di rispondere o pagare, tua mamma o tuo papà manda il messaggio a Pausa e riceve una risposta chiara, con una sola cosa da fare.',
-        'La cosa migliore è prepararlo insieme, con il loro telefono in mano. Sono cinque passi e ci vogliono circa due minuti.',
+        'La cosa migliore è prepararlo insieme, con il loro telefono in mano. Sono pochi passi e ci vogliono circa due minuti.',
       ],
       steps: [
         {
-          h2: '1. Installa l’app',
+          h2: 'Salva Pausa su WhatsApp',
+          extra: 'whatsapp',
+          text: [
+            'Sul loro telefono, tocca «Salva il contatto di Pausa»: resta in rubrica come «Pausa». Poi tocca «Apri Pausa su WhatsApp» e mandate un saluto, così la chat è già a portata di mano.',
+            'Da lì, davanti a un messaggio strano: si tiene premuto, si tocca «Inoltra» e si sceglie Pausa.',
+          ],
+        },
+        {
+          h2: 'Installa l’app',
           extra: 'install',
           text: [
             'Apri questa pagina sul loro telefono, con Chrome. Tocca il pulsante qui sotto oppure, se non compare, i tre puntini ⋮ in alto e «Installa app». Sulla schermata compare l’icona di Pausa.',
           ],
         },
         {
-          h2: '2. Salva il tuo nome e il tuo numero',
+          h2: 'Salva il tuo nome e il tuo numero',
           extra: 'contact',
           text: [
             'Quando Pausa vede un messaggio a rischio, mostra un grande pulsante per chiamarti e un altro per scriverti su WhatsApp. Così, nel momento del dubbio, parlare con te è a un tocco.',
@@ -329,21 +370,21 @@ export const WEB: Record<Lang, WebTexts> = {
           ],
         },
         {
-          h2: '3. Fate una prova insieme',
+          h2: 'Fate una prova insieme',
           extra: 'test',
           text: [
             'Tocca «Carica un messaggio di prova» e poi «Controlla il messaggio». Vedrete come risponde Pausa a una truffa e il pulsante per chiamarti.',
           ],
         },
         {
-          h2: '4. Spiega la regola',
+          h2: 'Spiega la regola',
           text: [
             'Una sola regola, facile da ricordare: se arriva qualcosa di strano, prima di rispondere lo mandiamo a Pausa.',
             'Su WhatsApp: si tiene premuto il messaggio, si toccano i tre puntini ⋮, «Condividi» e «Pausa». Funziona anche con SMS, email e screenshot.',
           ],
         },
         {
-          h2: '5. Scegliete una parola d’ordine di famiglia',
+          h2: 'Scegliete una parola d’ordine di famiglia',
           text: [
             'Scegliete insieme una parola o una domanda che conosce solo la famiglia. Se qualcuno scrive o chiama dicendo di essere un figlio o un nipote e chiede soldi, gli si chiede la parola d’ordine.',
             'Un truffatore non la sa, anche se scrive da un numero nuovo, usa una foto profilo conosciuta o imita una voce.',
@@ -356,6 +397,9 @@ export const WEB: Record<Lang, WebTexts> = {
             'Con il bot di Telegram, quando a tua mamma o tuo papà arriva un messaggio a rischio alto, l’avviso arriva a te senza che debbano fare nulla. Nel bot scrivi /famiglia e manda a loro il link che ti dà.',
           ],
         },
+      ],
+      autoAlertWhatsapp: [
+        'Con Pausa su WhatsApp o su Telegram, quando a tua mamma o tuo papà arriva un messaggio a rischio alto, l’avviso arriva a te senza che debbano fare nulla. Scrivi /famiglia a Pausa dal tuo telefono e manda a loro il link che ti dà.',
       ],
       iphone:
         'Su iPhone: apri la pagina con Safari, tocca Condividi e «Aggiungi alla schermata Home». Lì non si può ancora condividere direttamente da WhatsApp: bisogna copiare il messaggio e incollarlo in Pausa.',

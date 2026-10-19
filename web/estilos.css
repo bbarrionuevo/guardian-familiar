@@ -104,6 +104,8 @@ button.secondary { background: transparent; color: var(--accent); border: 2px so
 .family-form input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .family-status { margin: 0; font-weight: 700; }
 .urgent-link { margin: 0; font-weight: 700; }
+.wa-buttons { display: flex; flex-wrap: wrap; gap: 10px; }
+.wa-card { border: 2px solid var(--wa); }
 .urgent-now { font-weight: 700; background: var(--alto-bg); color: var(--fg); border-radius: 10px; padding: 12px 14px; }
 @media (max-width: 520px) {
   .checker button[type="submit"] { width: 100%; margin-left: 0; }

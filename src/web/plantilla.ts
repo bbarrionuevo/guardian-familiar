@@ -89,7 +89,9 @@ ${o.body}
   <div class="wrap">
     <p>${esc(t.footerNote)}</p>
     <p><a href="${urgentPath(o.lang)}">${esc(t.urgent.link)}</a></p>
-    <p><a href="${privacyPath(o.lang)}">${t.privacyLink}</a> · <a href="${termsPath(o.lang)}">${TERMS[o.lang].title}</a> · <a href="https://t.me/${site.botUsername}">Telegram</a></p>
+    <p><a href="${privacyPath(o.lang)}">${t.privacyLink}</a> · <a href="${termsPath(o.lang)}">${TERMS[o.lang].title}</a>${
+      site.whatsapp ? ` · <a href="${whatsappChatUrl(o.lang, site)}">WhatsApp</a>` : ''
+    } · <a href="https://t.me/${site.botUsername}">Telegram</a></p>
   </div>
 </footer>
 </body>
@@ -152,6 +154,19 @@ function familyForm(lang: Lang): string {
   </form>`;
 }
 
+// Pausa en WhatsApp: abrir el chat con un saludo y guardar el contacto (vCard).
+export const whatsappChatUrl = (lang: Lang, site: SiteConfig) => `https://wa.me/${site.whatsapp}?text=${encodeURIComponent(WEB[lang].whatsapp.greeting)}`;
+export const vcardPath = (lang: Lang) => `/${lang}/pausa.vcf`;
+
+function whatsappButtons(lang: Lang, site: SiteConfig): string {
+  const w = WEB[lang].whatsapp;
+  return `<p class="wa-buttons"><a class="share-wa" href="${whatsappChatUrl(lang, site)}">${esc(w.open)}</a> <a class="button-link" href="${vcardPath(lang)}" download="Pausa.vcf">${esc(w.save)}</a></p>`;
+}
+
+export function vcard(lang: Lang, site: SiteConfig): string {
+  return ['BEGIN:VCARD', 'VERSION:3.0', 'FN:Pausa', 'ORG:Pausa', `TEL;TYPE=CELL:+${site.whatsapp}`, `URL:${site.url}/${lang}/`, `NOTE:${WEB[lang].whatsapp.vcardNote}`, 'END:VCARD', ''].join('\r\n');
+}
+
 export function shareFamilyUrl(lang: Lang, pattern: Pattern | null, site: SiteConfig): string {
   const label = patternLabel(pattern, lang);
   return `https://wa.me/?text=${encodeURIComponent(WEB[lang].shareMessage(label, `${site.url}${homePath(lang)}`))}`;
@@ -166,11 +181,19 @@ export function homePage(lang: Lang, site: SiteConfig): string {
   const guides = GUIDES.map(
     (g) => `<li><a href="${guidePath(g, lang)}"><strong>${esc(g[lang].title)}</strong><span>${esc(g[lang].description)}</span></a></li>`,
   ).join('\n');
+  const whatsapp = site.whatsapp
+    ? `<section class="card wa-card" aria-labelledby="whatsapp-h">
+  <h2 id="whatsapp-h">${esc(t.whatsapp.h2)}</h2>
+  <p>${esc(t.whatsapp.text)}</p>
+  ${whatsappButtons(lang, site)}
+</section>
+`
+    : '';
   const body = `<section class="hero">
   <h1>${esc(t.homeH1)}</h1>
   <p class="lead">${esc(t.homeLead)}</p>
 </section>
-${checker(lang, t.navCheck, true)}
+${whatsapp}${checker(lang, t.navCheck, true)}
 <section class="card" aria-labelledby="familia-h">
   <h2 id="familia-h">${esc(t.family.cardH2)}</h2>
   <p>${esc(t.family.cardText)}</p>
@@ -240,16 +263,22 @@ export function familyPage(lang: Lang, site: SiteConfig): string {
     install: `<button type="button" class="install-btn" hidden>${esc(t.installButton)}</button>\n  <p class="muted">${esc(f.iphone)}</p>`,
     contact: familyForm(lang),
     test: `<p><button type="button" class="secondary" data-fill="${esc(f.testMessage)}">${esc(f.testButton)}</button></p>\n  ${checker(lang, t.navCheck, true)}`,
-    telegram: `<p><a class="button-link" href="https://t.me/${site.botUsername}">${esc(t.telegramButton)}</a></p>`,
+    whatsapp: site.whatsapp ? whatsappButtons(lang, site) : '',
+    telegram: `<p>${site.whatsapp ? `<a class="share-wa" href="${whatsappChatUrl(lang, site)}">${esc(t.whatsapp.open)}</a> ` : ''}<a class="button-link" href="https://t.me/${site.botUsername}">${esc(t.telegramButton)}</a></p>`,
   };
+  // El paso de WhatsApp, solo con número. Se numeran todos menos el del aviso automático (opcional).
+  let n = 0;
   const steps = f.steps
-    .map(
-      (s) => `<section class="card">
-  <h2>${esc(s.h2)}</h2>
-  ${s.text.map((p) => `<p>${esc(p)}</p>`).join('\n  ')}
+    .filter((s) => s.extra !== 'whatsapp' || site.whatsapp)
+    .map((s) => {
+      const text = s.extra === 'telegram' && site.whatsapp ? f.autoAlertWhatsapp : s.text;
+      const h2 = s.extra === 'telegram' ? s.h2 : `${++n}. ${s.h2}`;
+      return `<section class="card">
+  <h2>${esc(h2)}</h2>
+  ${text.map((p) => `<p>${esc(p)}</p>`).join('\n  ')}
   ${s.extra ? extras[s.extra] : ''}
-</section>`,
-    )
+</section>`;
+    })
     .join('\n');
   const body = `<section class="hero">
   <h1>${esc(f.title)}</h1>

@@ -47,6 +47,8 @@ jobs:
           # repositorio: se publican en la página, así que no son secretos de verdad).
           SITIO_RESPONSABLE: ${{ vars.SITIO_RESPONSABLE || secrets.SITIO_RESPONSABLE }}
           SITIO_CONTACTO: ${{ vars.SITIO_CONTACTO || secrets.SITIO_CONTACTO }}
+          # Número de Pausa en WhatsApp para la web. Se carga recién cuando el canal está probado.
+          SITIO_WHATSAPP: ${{ vars.SITIO_WHATSAPP || secrets.SITIO_WHATSAPP }}
       - name: Completar la configuración
         env:
           KV_ID: ${{ secrets.KV_ID }}
