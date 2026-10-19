@@ -13,7 +13,7 @@ export interface SiteConfig {
 export function siteConfig(env: Record<string, string | undefined> = {}): SiteConfig {
   return {
     url: (env.SITIO_URL || 'https://pausa.family').replace(/\/$/, ''),
-    botUsername: (env.BOT_USERNAME || 'guardian_familiar_bot').replace(/^@/, ''),
+    botUsername: (env.BOT_USERNAME || 'PausaFamilyBot').replace(/^@/, ''),
     responsable: env.SITIO_RESPONSABLE?.trim() || undefined,
     contacto: env.SITIO_CONTACTO?.trim() || undefined,
   };
