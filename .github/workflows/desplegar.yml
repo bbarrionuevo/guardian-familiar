@@ -24,7 +24,7 @@ concurrency:
 jobs:
   desplegar:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 35
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -89,8 +89,8 @@ jobs:
       - name: Control de vida
         env:
           WORKER_URL: ${{ steps.publicar.outputs.url }}
-        # La primera vez, el certificado del dominio puede tardar unos minutos.
-        run: curl -fsS --retry 20 --retry-delay 15 --retry-all-errors "$WORKER_URL/salud"
+        # Con un dominio recién comprado, el DNS y el certificado pueden tardar varios minutos.
+        run: curl -fsS --max-time 20 --retry 60 --retry-delay 20 --retry-all-errors "$WORKER_URL/salud"
       - name: Conectar el bot de Telegram
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
