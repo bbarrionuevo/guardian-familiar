@@ -2,6 +2,7 @@
 // y contadores diarios. Nunca se guarda el texto, las fotos ni los audios que se revisan.
 
 import type { Lang } from '../motor/tipos';
+import type { Address, Channel } from './canal';
 
 export interface Store {
   get<T>(key: string): Promise<T | null>;
@@ -12,9 +13,14 @@ export interface Store {
 }
 
 export interface Link {
-  chatId: number;
+  chatId: number | string;
   name: string;
+  // Sin canal es Telegram (los vínculos guardados antes de sumar WhatsApp).
+  channel?: Channel;
 }
+
+export const linkAddress = (l: { chatId: number | string; channel?: Channel }): Address => ({ channel: l.channel ?? 'telegram', id: String(l.chatId) });
+export const sameAddress = (a: Address, b: Address) => a.channel === b.channel && a.id === b.id;
 
 export interface UserRecord {
   lang: Lang;
@@ -26,15 +32,19 @@ export interface UserRecord {
 }
 
 export interface Invite {
-  childChatId: number;
+  childChatId: number | string;
   childName: string;
+  channel?: Channel;
 }
 
+// Telegram conserva las claves de antes (u:<id>); WhatsApp lleva prefijo (u:wa:<número>).
+const addressKey = (a: Address) => (a.channel === 'telegram' ? a.id : `wa:${a.id}`);
+
 export const keys = {
-  user: (chatId: number) => `u:${chatId}`,
+  user: (a: Address) => `u:${addressKey(a)}`,
   invite: (code: string) => `inv:${code}`,
   // Una clave por chat y día: sirve de límite diario y para contar usuarios activos.
-  daily: (day: string, chatId: number) => `cnt:${day}:${chatId}`,
+  daily: (day: string, a: Address) => `cnt:${day}:${addressKey(a)}`,
   stats: (day: string) => `st:${day}`,
 };
 

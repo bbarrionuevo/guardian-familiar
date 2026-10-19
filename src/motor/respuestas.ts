@@ -312,9 +312,15 @@ export function renderVerdict(v: Verdict): string {
 }
 
 // Aviso para el familiar vinculado cuando el riesgo es alto. No incluye el mensaje original.
-export function renderFamilyAlert(v: Verdict, who: string, lang: Lang): string {
+// Las partes del aviso, para los canales que lo mandan con una plantilla (WhatsApp).
+export function familyAlertParts(v: Verdict, lang: Lang): { label: string; action: string } {
   const label = patternLabel(v.pattern, lang);
   const { action } = verdictText({ ...v, lang, ai: lang === v.lang ? v.ai : undefined });
+  return { label, action };
+}
+
+export function renderFamilyAlert(v: Verdict, who: string, lang: Lang): string {
+  const { label, action } = familyAlertParts(v, lang);
   if (lang === 'it') {
     return `⚠️ ${who} ha ricevuto un messaggio a rischio alto (${label}).\nHo risposto: «${action}»\nSe puoi, chiama ${who} adesso.`;
   }

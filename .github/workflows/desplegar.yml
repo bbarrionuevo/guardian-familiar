@@ -64,9 +64,16 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           ANTHROPIC_WORKSPACE_ID: ${{ secrets.ANTHROPIC_WORKSPACE_ID }}
           METRICAS_CLAVE: ${{ secrets.METRICAS_CLAVE }}
+          WHATSAPP_TOKEN: ${{ secrets.WHATSAPP_TOKEN }}
+          WHATSAPP_PHONE_ID: ${{ secrets.WHATSAPP_PHONE_ID }}
+          WHATSAPP_NUMBER: ${{ secrets.WHATSAPP_NUMBER }}
+          WHATSAPP_APP_SECRET: ${{ secrets.WHATSAPP_APP_SECRET }}
+          WHATSAPP_VERIFY_TOKEN: ${{ secrets.WHATSAPP_VERIFY_TOKEN }}
+          WHATSAPP_TEMPLATE_ALERTA: ${{ secrets.WHATSAPP_TEMPLATE_ALERTA }}
         run: |
           node -e '
-            const keys = ["BOT_TOKEN", "TELEGRAM_SECRET", "ANTHROPIC_API_KEY", "ANTHROPIC_WORKSPACE_ID", "METRICAS_CLAVE"];
+            const keys = ["BOT_TOKEN", "TELEGRAM_SECRET", "ANTHROPIC_API_KEY", "ANTHROPIC_WORKSPACE_ID", "METRICAS_CLAVE",
+              "WHATSAPP_TOKEN", "WHATSAPP_PHONE_ID", "WHATSAPP_NUMBER", "WHATSAPP_APP_SECRET", "WHATSAPP_VERIFY_TOKEN", "WHATSAPP_TEMPLATE_ALERTA"];
             const out = Object.fromEntries(keys.filter((k) => process.env[k]).map((k) => [k, process.env[k]]));
             require("fs").writeFileSync("/tmp/secretos.json", JSON.stringify(out));
           '

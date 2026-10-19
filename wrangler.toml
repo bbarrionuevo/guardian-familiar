@@ -10,7 +10,7 @@ compatibility_flags = ["nodejs_compat"]
 directory = "./public"
 binding = "ASSETS"
 not_found_handling = "404-page"
-run_worker_first = ["/api/*", "/telegram/*", "/salud", "/es/compartir", "/it/compartir"]
+run_worker_first = ["/api/*", "/telegram/*", "/whatsapp/*", "/salud", "/es/compartir", "/it/compartir"]
 
 [[kv_namespaces]]
 binding = "GUARDIAN_KV"

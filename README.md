@@ -50,6 +50,36 @@ Los audios se pasan a texto con Whisper de Cloudflare. No se guarda el texto, la
 5. **Publicar.** En *Actions → Desplegar → Run workflow*. Al terminar, el bot ya responde en Telegram.
 6. **Medir la IA.** En *Actions → Evaluar con IA → Run workflow*. El bot usa `claude-haiku-5-5` (se cambia en `GUARDIAN_MODELO` de `wrangler.toml`); se puede comparar con otro modelo eligiéndolo en la lista.
 
+## WhatsApp (cuando quieras activarlo)
+
+El código ya está listo. Mientras falten estas claves, el canal queda apagado y el resto funciona igual.
+
+1. **App de Meta.** En developers.facebook.com, creá una app de tipo «Business» y sumale el producto «WhatsApp».
+2. **Número de prueba.** En *WhatsApp → API Setup*, Meta da un número de prueba gratis que puede escribir hasta a 5 teléfonos que agregues. Alcanza para probar con la familia. Para un número propio hace falta un teléfono que no esté usando WhatsApp y, para pasar de los límites iniciales, verificar el negocio.
+3. **Datos que hay que copiar:**
+   - el *Phone number ID*, de la misma página;
+   - el *App Secret*, en *App settings → Basic*;
+   - un token permanente: en la configuración del negocio, *System users*, creá un usuario y generá un token con el permiso `whatsapp_business_messaging`. El token de la página de prueba vence a las 24 horas.
+4. **Webhook.** En *WhatsApp → Configuration*:
+   - poné como URL `https://guardian-familiar.briaan-b.workers.dev/whatsapp/webhook`;
+   - como «Verify token», una contraseña inventada (la misma que va en `WHATSAPP_VERIFY_TOKEN`);
+   - suscribite al campo `messages`.
+5. **Plantilla del aviso a la familia (opcional pero recomendable).** WhatsApp solo deja escribirle a alguien que no habló con el bot en las últimas 24 horas con una plantilla aprobada. Creá una de categoría «Utility» llamada `alerta_familia`, en español y en italiano:
+   - es: `⚠️ {{1}} recibió un mensaje con riesgo alto ({{2}}). Le respondí: «{{3}}». Si puede, llame ahora a su familiar.`
+   - it: `⚠️ {{1}} ha ricevuto un messaggio a rischio alto ({{2}}). Ho risposto: «{{3}}». Se puoi, chiama subito il tuo familiare.`
+6. **Secretos en GitHub**, y después *Desplegar*:
+
+   | Secreto | Qué es |
+   |---|---|
+   | `WHATSAPP_TOKEN` | El token permanente |
+   | `WHATSAPP_PHONE_ID` | El Phone number ID |
+   | `WHATSAPP_NUMBER` | El número del bot con código de país, sin «+» (por ejemplo `393331234567`) |
+   | `WHATSAPP_APP_SECRET` | El App Secret |
+   | `WHATSAPP_VERIFY_TOKEN` | La contraseña inventada del webhook |
+   | `WHATSAPP_TEMPLATE_ALERTA` | `alerta_familia`, cuando Meta apruebe la plantilla |
+
+Las respuestas a quien le escribe al bot no tienen costo en la tarifa actual de Meta; los avisos con plantilla cuestan centavos según el país. El bot es de un servicio concreto (revisar mensajes), que es lo que Meta permite desde 2026.
+
 ## Uso
 
 - **Persona mayor:** abre el bot y reenvía cualquier mensaje raro.

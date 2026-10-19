@@ -31,10 +31,11 @@ npx wrangler deploy --dry-run --outdir /tmp/worker
   - `ia.ts`: capa 3.
   - `analizar.ts`: une las tres capas.
   - `respuestas.ts`: textos de respuesta.
-- `src/bot/`: el bot de Telegram.
-  - `bot.ts`: lógica.
-  - `almacen.ts`: KV.
-  - `telegram-api.ts`, `transcriptor.ts` y `textos.ts`.
+- `src/bot/`: el bot, igual para los dos canales.
+  - `bot.ts`: lógica común (recibe un `Incoming` de `canal.ts`).
+  - `telegram-api.ts` y `whatsapp.ts`: cada canal traduce lo que recibe y sabe responder.
+  - `almacen.ts`: KV. Las claves de Telegram no llevan prefijo; las de WhatsApp, `wa:`.
+  - `transcriptor.ts` y `textos.ts`.
 - `src/servidor/worker.ts`: las rutas del Worker; `web.ts`: las de la web (revisar, compartir, eventos).
 - `src/web/`: la web.
   - `guias.ts`: el contenido de las guías; los ejemplos salen del banco por id.

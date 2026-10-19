@@ -1,29 +1,30 @@
-// Lógica del bot de Telegram: comandos, vínculo familiar y revisión de mensajes.
-// No guarda el contenido de lo que revisa: solo contadores por día.
+// Lógica del bot, igual para Telegram y WhatsApp: comandos, vínculo familiar y revisión de
+// mensajes. Cada canal traduce lo que recibe a un Incoming (canal.ts). No guarda el contenido
+// de lo que revisa: solo contadores por día.
 
 import { analyze, type AnalyzeInput } from '../motor/analizar';
 import type { AiClassifier, ImageMediaType } from '../motor/ia';
 import { langFromCode } from '../motor/normalizar';
-import { renderFamilyAlert, renderVerdict } from '../motor/respuestas';
+import { familyAlertParts, renderFamilyAlert, renderVerdict } from '../motor/respuestas';
 import type { Lang } from '../motor/tipos';
-import { keys, type Invite, type Link, type Store, type UserRecord } from './almacen';
-import { toBase64, type TelegramApi, type TgMessage, type TgUpdate } from './telegram-api';
+import { keys, linkAddress, sameAddress, type Invite, type Link, type Store, type UserRecord } from './almacen';
+import type { Address, Channel, Incoming, Messenger } from './canal';
+import { telegramIncoming, telegramMessenger, toBase64, type TelegramApi, type TgUpdate } from './telegram-api';
 import { COMMANDS, TEXTS } from './textos';
 import type { Transcriber } from './transcriptor';
 
-export interface BotDeps {
-  api: TelegramApi;
+export interface CoreDeps {
+  messengers: Partial<Record<Channel, Messenger>>;
   store: Store;
   ai: AiClassifier | null;
   transcriber: Transcriber | null;
-  botUsername: string;
   now?: () => Date;
   dailyLimit?: number;
   log?: (msg: string) => void;
 }
 
 // Claude acepta imágenes de hasta 5 MB; en base64 crecen un tercio.
-const MAX_IMAGE_BYTES = 3_500_000;
+export const MAX_IMAGE_BYTES = 3_500_000;
 const MAX_AUDIO_BYTES = 10_000_000;
 const MAX_AUDIO_SECONDS = 180;
 const INVITE_TTL = 7 * 24 * 3600;
@@ -31,6 +32,7 @@ const DAILY_TTL = 40 * 24 * 3600;
 const STATS_TTL = 400 * 24 * 3600;
 const MAX_GUARDIANS = 5;
 const IMAGE_TYPES: ImageMediaType[] = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const INVITE_TEXT = /^(?:\/start\s+)?fam_([A-Za-z0-9]{6,32})$/;
 
 export interface DayStats {
   checks: number;
@@ -44,6 +46,7 @@ export interface DayStats {
 
 const dayOf = (d: Date) => d.toISOString().slice(0, 10);
 const cleanName = (name: string | undefined) => (name ?? '').replace(/\s+/g, ' ').trim().slice(0, 40) || '—';
+const toLink = (a: Address, name: string): Link => ({ chatId: a.channel === 'telegram' ? Number(a.id) : a.id, name, channel: a.channel });
 
 function newCode(): string {
   const alphabet = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -51,166 +54,185 @@ function newCode(): string {
   return [...bytes].map((b) => alphabet[b % alphabet.length]).join('');
 }
 
-async function loadUser(store: Store, msg: TgMessage): Promise<UserRecord> {
-  const key = keys.user(msg.chat.id);
+async function loadUser(store: Store, msg: Incoming): Promise<{ user: UserRecord; isNew: boolean }> {
+  const key = keys.user(msg.from);
   const existing = await store.get<UserRecord>(key);
-  const name = cleanName(msg.from?.first_name);
+  const name = cleanName(msg.name);
   if (existing) {
-    if (existing.name !== name && msg.from) {
+    if (msg.name && existing.name !== name) {
       existing.name = name;
       await store.put(key, existing);
     }
-    return existing;
+    return { user: existing, isNew: false };
   }
-  const user: UserRecord = { lang: langFromCode(msg.from?.language_code), name, guardians: [], protects: [] };
+  const user: UserRecord = { lang: langFromCode(msg.langCode), name, guardians: [], protects: [] };
   await store.put(key, user);
-  return user;
+  return { user, isNew: true };
+}
+
+// Telegram: el Worker llama a esta función con cada actualización.
+export interface BotDeps extends Omit<CoreDeps, 'messengers'> {
+  api: TelegramApi;
+  botUsername: string;
+  // Si WhatsApp está configurado, para avisar a familiares que estén allá.
+  whatsapp?: Messenger;
 }
 
 export async function handleUpdate(update: TgUpdate, deps: BotDeps): Promise<void> {
-  const msg = update.message;
-  // Solo chats privados: en grupos el bot no lee nada.
-  if (!msg || msg.chat.type !== 'private') return;
-  const user = await loadUser(deps.store, msg);
-  const text = msg.text?.trim() ?? '';
-  if (text.startsWith('/') && !msg.forward_origin) {
-    await handleCommand(msg, user, text, deps);
+  const incoming = telegramIncoming(update, MAX_IMAGE_BYTES);
+  if (!incoming) return;
+  const { api, botUsername, whatsapp, ...rest } = deps;
+  await handleIncoming(incoming, { ...rest, messengers: { telegram: telegramMessenger(api, botUsername), whatsapp } });
+}
+
+export async function handleIncoming(msg: Incoming, deps: CoreDeps): Promise<void> {
+  const out = deps.messengers[msg.from.channel];
+  if (!out) return;
+  const { user, isNew } = await loadUser(deps.store, msg);
+  const text = msg.text.trim();
+
+  const invite = msg.forwarded ? null : INVITE_TEXT.exec(text);
+  if (invite) {
+    await out.send(msg.from.id, TEXTS[user.lang].welcome);
+    await acceptInvite(msg.from, user, invite[1]!, deps);
     return;
   }
+  if (text.startsWith('/') && !msg.forwarded) {
+    await handleCommand(msg.from, user, text, deps);
+    return;
+  }
+  // En WhatsApp no hay /start: la primera vez se saluda antes de revisar.
+  if (isNew) await out.send(msg.from.id, TEXTS[user.lang].welcome);
   await checkMessage(msg, user, deps);
 }
 
-async function handleCommand(msg: TgMessage, user: UserRecord, text: string, deps: BotDeps): Promise<void> {
-  const { api, store } = deps;
-  const chatId = msg.chat.id;
-  const [rawCmd = '', payload = ''] = text.slice(1).split(/\s+/, 2);
+async function handleCommand(from: Address, user: UserRecord, text: string, deps: CoreDeps): Promise<void> {
+  const { store } = deps;
+  const out = deps.messengers[from.channel]!;
+  const [rawCmd = ''] = text.slice(1).split(/\s+/, 1);
   const cmd = COMMANDS[rawCmd.split('@')[0]!.toLowerCase()];
   const t = TEXTS[user.lang];
 
   switch (cmd) {
-    case 'start': {
-      await api.sendMessage(chatId, t.welcome);
-      if (payload.startsWith('fam_')) await acceptInvite(msg, user, payload.slice(4), deps);
+    case 'start':
+      await out.send(from.id, t.welcome);
       return;
-    }
     case 'family': {
       const code = newCode();
-      await store.put(keys.invite(code), { childChatId: chatId, childName: user.name } satisfies Invite, INVITE_TTL);
-      // El usuario del bot puede venir escrito con @; en el enlace va sin.
-      const link = `https://t.me/${deps.botUsername.replace(/^@/, '')}?start=fam_${code}`;
-      await api.sendMessage(chatId, t.inviteForChild(link));
-      await api.sendMessage(chatId, t.inviteToForward(link));
+      await store.put(keys.invite(code), { childChatId: from.id, childName: user.name, channel: from.channel } satisfies Invite, INVITE_TTL);
+      // Primero el enlace del canal de quien invita; si hay otro canal, también ese.
+      const channels: Channel[] = [from.channel, ...(['telegram', 'whatsapp'] as Channel[]).filter((c) => c !== from.channel)];
+      const links = channels.flatMap((c) => (deps.messengers[c] ? [deps.messengers[c]!.inviteLink(code)] : []));
+      await out.send(from.id, t.inviteForChild(links.join('\n')));
+      await out.send(from.id, t.inviteToForward(links.join('\n')));
       return;
     }
     case 'unlink': {
       if (!user.guardians.length && !user.protects.length) {
-        await api.sendMessage(chatId, t.nothingToUnlink);
+        await out.send(from.id, t.nothingToUnlink);
         return;
       }
       // Se borra el vínculo de los dos lados.
       for (const other of [...user.guardians, ...user.protects]) {
-        const key = keys.user(other.chatId);
+        const key = keys.user(linkAddress(other));
         const rec = await store.get<UserRecord>(key);
         if (!rec) continue;
-        rec.guardians = rec.guardians.filter((g) => g.chatId !== chatId);
-        rec.protects = rec.protects.filter((p) => p.chatId !== chatId);
+        rec.guardians = rec.guardians.filter((g) => !sameAddress(linkAddress(g), from));
+        rec.protects = rec.protects.filter((p) => !sameAddress(linkAddress(p), from));
         await store.put(key, rec);
       }
       user.guardians = [];
       user.protects = [];
-      await store.put(keys.user(chatId), user);
-      await api.sendMessage(chatId, t.unlinked);
+      await store.put(keys.user(from), user);
+      await out.send(from.id, t.unlinked);
       return;
     }
     case 'privacy':
-      await api.sendMessage(chatId, t.privacy);
+      await out.send(from.id, t.privacy);
       return;
     case 'lang_es':
     case 'lang_it': {
       user.lang = cmd === 'lang_it' ? 'it' : 'es';
-      await store.put(keys.user(chatId), user);
-      await api.sendMessage(chatId, TEXTS[user.lang].langSet);
+      await store.put(keys.user(from), user);
+      await out.send(from.id, TEXTS[user.lang].langSet);
       return;
     }
     default:
-      await api.sendMessage(chatId, t.help);
+      await out.send(from.id, t.help);
   }
 }
 
-async function acceptInvite(msg: TgMessage, user: UserRecord, code: string, deps: BotDeps): Promise<void> {
-  const { api, store } = deps;
-  const chatId = msg.chat.id;
+async function acceptInvite(from: Address, user: UserRecord, code: string, deps: CoreDeps): Promise<void> {
+  const { store } = deps;
+  const out = deps.messengers[from.channel]!;
   const t = TEXTS[user.lang];
-  const invite = /^[A-Za-z0-9]{6,32}$/.test(code) ? await store.get<Invite>(keys.invite(code)) : null;
+  const invite = await store.get<Invite>(keys.invite(code));
   if (!invite) {
-    await api.sendMessage(chatId, t.inviteInvalid);
+    await out.send(from.id, t.inviteInvalid);
     return;
   }
-  if (invite.childChatId === chatId) {
-    await api.sendMessage(chatId, t.inviteSelf);
+  const childAddr = linkAddress({ chatId: invite.childChatId, channel: invite.channel });
+  if (sameAddress(childAddr, from)) {
+    await out.send(from.id, t.inviteSelf);
     return;
   }
   await store.delete(keys.invite(code));
 
-  const addLink = (list: Link[], link: Link) => [...list.filter((l) => l.chatId !== link.chatId), link].slice(-MAX_GUARDIANS);
-  user.guardians = addLink(user.guardians, { chatId: invite.childChatId, name: invite.childName });
-  await store.put(keys.user(chatId), user);
+  const addLink = (list: Link[], link: Link) =>
+    [...list.filter((l) => !sameAddress(linkAddress(l), linkAddress(link))), link].slice(-MAX_GUARDIANS);
+  user.guardians = addLink(user.guardians, toLink(childAddr, invite.childName));
+  await store.put(keys.user(from), user);
 
-  const childKey = keys.user(invite.childChatId);
+  const childKey = keys.user(childAddr);
   const child = await store.get<UserRecord>(childKey);
   if (child) {
-    child.protects = addLink(child.protects, { chatId, name: user.name });
+    child.protects = addLink(child.protects, toLink(from, user.name));
     await store.put(childKey, child);
   }
-  await api.sendMessage(chatId, t.linkedParent(invite.childName));
-  await api.sendMessage(invite.childChatId, TEXTS[child?.lang ?? user.lang].linkedChild(user.name));
+  await out.send(from.id, t.linkedParent(invite.childName));
+  await deps.messengers[childAddr.channel]?.send(childAddr.id, TEXTS[child?.lang ?? user.lang].linkedChild(user.name));
 }
 
-async function checkMessage(msg: TgMessage, user: UserRecord, deps: BotDeps): Promise<void> {
-  const { api, store } = deps;
-  const chatId = msg.chat.id;
+async function checkMessage(msg: Incoming, user: UserRecord, deps: CoreDeps): Promise<void> {
+  const { store } = deps;
+  const from = msg.from;
+  const out = deps.messengers[from.channel]!;
   const t = TEXTS[user.lang];
-  const text = (msg.text ?? msg.caption ?? '').trim();
+  const text = msg.text.trim();
 
-  const photo = msg.photo?.length
-    ? [...msg.photo].sort((a, b) => b.width * b.height - a.width * a.height).find((p) => (p.file_size ?? 0) <= MAX_IMAGE_BYTES)
-    : undefined;
-  const imageDoc = msg.document && IMAGE_TYPES.includes(msg.document.mime_type as ImageMediaType) ? msg.document : undefined;
-  const sound = msg.voice ?? msg.audio;
-  if (!text && !msg.photo?.length && !imageDoc && !sound) {
-    await api.sendMessage(chatId, t.unsupported);
+  if (!text && !msg.image && !msg.imageTooBig && !msg.audio) {
+    await out.send(from.id, t.unsupported);
     return;
   }
 
   const now = deps.now?.() ?? new Date();
   const day = dayOf(now);
   const limit = deps.dailyLimit ?? 30;
-  const countKey = keys.daily(day, chatId);
+  const countKey = keys.daily(day, from);
   const used = (await store.get<number>(countKey)) ?? 0;
   if (used >= limit) {
-    await api.sendMessage(chatId, t.limit(used));
+    await out.send(from.id, t.limit(used));
     return;
   }
   await store.put(countKey, used + 1, DAILY_TTL);
-  await api.sendTyping(chatId);
+  await out.typing(from.id);
 
   const input: AnalyzeInput = { text, langHint: user.lang, replyLang: user.lang };
-  const imageFile = photo ? { id: photo.file_id, type: 'image/jpeg' as ImageMediaType } : imageDoc ? { id: imageDoc.file_id, type: imageDoc.mime_type as ImageMediaType } : null;
-  if (imageFile) {
-    const bytes = await api.downloadFile(imageFile.id, MAX_IMAGE_BYTES);
-    if (bytes) input.image = { mediaType: imageFile.type, base64: toBase64(bytes) };
+  if (msg.image && IMAGE_TYPES.includes((msg.image.mimeType ?? 'image/jpeg') as ImageMediaType)) {
+    const bytes = await out.download(msg.image, MAX_IMAGE_BYTES);
+    if (bytes) input.image = { mediaType: (msg.image.mimeType ?? 'image/jpeg') as ImageMediaType, base64: toBase64(bytes) };
     else if (!text) {
-      await api.sendMessage(chatId, t.tooBig);
+      await out.send(from.id, t.tooBig);
       return;
     }
-  } else if (msg.photo?.length && !text) {
-    await api.sendMessage(chatId, t.tooBig);
+  } else if (msg.imageTooBig && !text) {
+    await out.send(from.id, t.tooBig);
     return;
   }
-  if (sound) {
+  if (msg.audio) {
     let transcript: string | null = null;
-    if (deps.transcriber && sound.duration <= MAX_AUDIO_SECONDS) {
-      const bytes = await api.downloadFile(sound.file_id, MAX_AUDIO_BYTES);
+    if (deps.transcriber && (msg.audio.seconds ?? 0) <= MAX_AUDIO_SECONDS) {
+      const bytes = await out.download(msg.audio, MAX_AUDIO_BYTES);
       if (bytes) transcript = await deps.transcriber.transcribe(bytes);
     }
     input.audio = { transcript };
@@ -222,13 +244,19 @@ async function checkMessage(msg: TgMessage, user: UserRecord, deps: BotDeps): Pr
   let alerts = 0;
   if (verdict.level === 'alto') {
     for (const g of user.guardians) {
-      const guardian = await store.get<UserRecord>(keys.user(g.chatId));
+      const to = linkAddress(g);
+      const messenger = deps.messengers[to.channel];
+      if (!messenger) continue;
+      const guardian = await store.get<UserRecord>(keys.user(to));
       const lang: Lang = guardian?.lang ?? user.lang;
-      if (await api.sendMessage(g.chatId, renderFamilyAlert(verdict, user.name, lang))) alerts++;
+      const parts = familyAlertParts(verdict, lang);
+      const alert = { who: user.name, label: parts.label, action: parts.action, text: renderFamilyAlert(verdict, user.name, lang), lang };
+      const sent = messenger.sendAlert ? await messenger.sendAlert(to.id, alert) : await messenger.send(to.id, alert.text);
+      if (sent) alerts++;
     }
     if (alerts) reply += `\n\n${t.familyNotified}`;
   }
-  await api.sendMessage(chatId, reply);
+  await out.send(from.id, reply);
 
   const statsKey = keys.stats(day);
   const stats = (await store.get<DayStats>(statsKey)) ?? { checks: 0, alto: 0, medio: 0, sin_senales: 0, imagen: 0, audio: 0, alertas: 0 };
@@ -238,5 +266,5 @@ async function checkMessage(msg: TgMessage, user: UserRecord, deps: BotDeps): Pr
   if (input.audio) stats.audio++;
   stats.alertas += alerts;
   await store.put(statsKey, stats, STATS_TTL);
-  deps.log?.(`revisión: ${verdict.level} ${verdict.pattern ?? '-'} ${verdict.source}`);
+  deps.log?.(`revisión ${from.channel}: ${verdict.level} ${verdict.pattern ?? '-'} ${verdict.source}`);
 }

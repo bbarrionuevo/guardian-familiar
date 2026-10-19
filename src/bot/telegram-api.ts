@@ -1,5 +1,7 @@
 // Cliente mínimo de la API de bots de Telegram, con fetch (funciona en Workers y en Node).
 
+import type { Incoming, Messenger } from './canal';
+
 export interface TgUser {
   id: number;
   first_name: string;
@@ -81,4 +83,38 @@ export function toBase64(bytes: Uint8Array): string {
   const chunk = 0x8000;
   for (let i = 0; i < bytes.length; i += chunk) binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
   return btoa(binary);
+}
+
+// Traduce una actualización de Telegram al formato común del bot. Solo chats privados.
+export function telegramIncoming(update: TgUpdate, maxImageBytes: number): Incoming | null {
+  const msg = update.message;
+  if (!msg || msg.chat.type !== 'private') return null;
+  const incoming: Incoming = {
+    from: { channel: 'telegram', id: String(msg.chat.id) },
+    name: msg.from?.first_name,
+    langCode: msg.from?.language_code,
+    text: msg.text ?? msg.caption ?? '',
+    forwarded: Boolean(msg.forward_origin),
+  };
+  if (msg.photo?.length) {
+    // La foto más grande que entre en el límite.
+    const photo = [...msg.photo].sort((a, b) => b.width * b.height - a.width * a.height).find((p) => (p.file_size ?? 0) <= maxImageBytes);
+    if (photo) incoming.image = { id: photo.file_id, mimeType: 'image/jpeg' };
+    else incoming.imageTooBig = true;
+  } else if (msg.document?.mime_type?.startsWith('image/')) {
+    incoming.image = { id: msg.document.file_id, mimeType: msg.document.mime_type };
+  }
+  const sound = msg.voice ?? msg.audio;
+  if (sound) incoming.audio = { id: sound.file_id, mimeType: sound.mime_type, seconds: sound.duration };
+  return incoming;
+}
+
+export function telegramMessenger(api: TelegramApi, botUsername: string): Messenger {
+  return {
+    send: (to, text) => api.sendMessage(Number(to), text),
+    typing: (to) => api.sendTyping(Number(to)),
+    download: (ref, maxBytes) => api.downloadFile(ref.id, maxBytes),
+    // El usuario del bot puede venir escrito con @; en el enlace va sin.
+    inviteLink: (code) => `https://t.me/${botUsername.replace(/^@/, '')}?start=fam_${code}`,
+  };
 }

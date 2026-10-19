@@ -77,8 +77,8 @@ describe('bot', () => {
 
     // Desvincular borra los dos lados.
     await send(1, { text: '/desvincular' });
-    expect((await store.get<UserRecord>(keys.user(100)))?.protects).toEqual([]);
-    expect((await store.get<UserRecord>(keys.user(1)))?.guardians).toEqual([]);
+    expect((await store.get<UserRecord>(keys.user({ channel: 'telegram', id: '100' })))?.protects).toEqual([]);
+    expect((await store.get<UserRecord>(keys.user({ channel: 'telegram', id: '1' })))?.guardians).toEqual([]);
   });
 
   it('el enlace no lleva @ aunque el usuario del bot se haya cargado con @', async () => {
