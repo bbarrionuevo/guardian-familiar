@@ -46,7 +46,7 @@ jobs:
           if ! [[ "$KV_ID" =~ ^[0-9a-f]{32}$ ]]; then
             KV_ID=$(npx wrangler kv namespace list | node scripts/id-kv.mjs "$KV_ID")
           fi
-          sed -i "s/KV_ID_PENDIENTE/${KV_ID}/; s/BOT_USERNAME_PENDIENTE/${BOT_USERNAME}/" wrangler.toml
+          sed -i "s/KV_ID_PENDIENTE/${KV_ID}/; s/BOT_USERNAME_PENDIENTE/${BOT_USERNAME#@}/" wrangler.toml
       - name: Publicar el Worker
         id: publicar
         env:

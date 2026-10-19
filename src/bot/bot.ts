@@ -96,7 +96,8 @@ async function handleCommand(msg: TgMessage, user: UserRecord, text: string, dep
     case 'family': {
       const code = newCode();
       await store.put(keys.invite(code), { childChatId: chatId, childName: user.name } satisfies Invite, INVITE_TTL);
-      const link = `https://t.me/${deps.botUsername}?start=fam_${code}`;
+      // El usuario del bot puede venir escrito con @; en el enlace va sin.
+      const link = `https://t.me/${deps.botUsername.replace(/^@/, '')}?start=fam_${code}`;
       await api.sendMessage(chatId, t.inviteForChild(link));
       await api.sendMessage(chatId, t.inviteToForward(link));
       return;

@@ -81,6 +81,12 @@ describe('bot', () => {
     expect((await store.get<UserRecord>(keys.user(1)))?.guardians).toEqual([]);
   });
 
+  it('el enlace no lleva @ aunque el usuario del bot se haya cargado con @', async () => {
+    const { sent, send } = setup({ botUsername: '@guardian_familiar_bot' });
+    await send(100, { text: '/familia' });
+    expect(sent.at(-1)?.text).toContain('https://t.me/guardian_familiar_bot?start=fam_');
+  });
+
   it('no deja usar el propio enlace', async () => {
     const { sent, send } = setup();
     await send(100, { text: '/familia' });
