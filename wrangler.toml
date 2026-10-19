@@ -13,7 +13,7 @@ binding = "AI"
 
 [vars]
 BOT_USERNAME = "BOT_USERNAME_PENDIENTE"
-GUARDIAN_MODELO = "claude-opus-5-5"
+GUARDIAN_MODELO = "claude-haiku-5-5"
 
 [observability]
 enabled = true

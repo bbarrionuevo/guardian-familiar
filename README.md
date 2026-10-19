@@ -37,7 +37,7 @@ Los audios se pasan a texto con Whisper de Cloudflare. No se guarda el texto, la
    | `METRICAS_CLAVE` | Otra contraseña inventada, para ver las métricas |
 
 5. **Publicar.** En *Actions → Desplegar → Run workflow*. Al terminar, el bot ya responde en Telegram.
-6. **Medir la IA.** En *Actions → Evaluar con IA → Run workflow*. Corrélo una vez con `claude-opus-5-5` y otra con `claude-haiku-5-5`, y compará los resultados en el resumen.
+6. **Medir la IA.** En *Actions → Evaluar con IA → Run workflow*. El bot usa `claude-haiku-5-5` (se cambia en `GUARDIAN_MODELO` de `wrangler.toml`); se puede comparar con otro modelo eligiéndolo en la lista.
 
 ## Uso
 
@@ -53,8 +53,8 @@ Los audios se pasan a texto con Whisper de Cloudflare. No se guarda el texto, la
 ## Costos estimados
 
 - **Cloudflare:** gratis. El plan gratis permite 1000 escrituras por día en KV, unas 450 revisiones diarias. Si se pasa, el plan pago cuesta US$ 5 por mes.
-- **Claude Opus 5.5:** alrededor de US$ 0,01 a 0,02 por revisión que llega a la IA, y algo más con capturas de pantalla.
-- **Claude Haiku 5.5:** unas 30 veces menos. La evaluación dirá si alcanza.
+- **Claude Haiku 5.5** (el que usa el bot): menos de US$ 0,001 por revisión que llega a la IA, algo más con capturas de pantalla.
+- **Claude Opus 5.5:** alrededor de US$ 0,01 a 0,02 por revisión. En la evaluación del 19/10/2026 acertó igual que Haiku.
 - La página web tiene un límite de 20 revisiones con IA por día y por IP. Pasado ese límite, responde solo con las reglas.
 
 ## Desarrollo

@@ -29,7 +29,8 @@ export interface AiClassifier {
   classify(input: AiInput): Promise<AiResult | null>;
 }
 
-export const DEFAULT_MODEL = 'claude-opus-5-5';
+// Haiku: en la evaluación del 19/10/2026 acertó igual que Opus por unas 40 veces menos.
+export const DEFAULT_MODEL = 'claude-haiku-5-5';
 
 const SCHEMA = {
   type: 'object',

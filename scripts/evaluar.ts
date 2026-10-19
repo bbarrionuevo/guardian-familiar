@@ -5,7 +5,7 @@
 //                                           o algún mensaje legítimo pasa su nivel máximo
 //   npm run evaluar -- --ciego            → usa data/banco/ciego/ y muestra solo los totales:
 //                                           esos mensajes no se miran para no ajustar las reglas a ellos
-// La IA usa GUARDIAN_MODELO (por defecto claude-opus-5-5).
+// La IA usa GUARDIAN_MODELO (por defecto claude-haiku-5-5).
 
 import { readFileSync, readdirSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
