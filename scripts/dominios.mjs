@@ -1,5 +1,6 @@
 // Consulta si unos dominios están registrados, con RDAP: el servidor de cada terminación sale de
-// la lista oficial de IANA. 404 = libre; 200 = ocupado. Hay que confirmarlo igual al comprar.
+// la lista oficial de IANA. 404 = libre; 200 = ocupado, con el registrador y los servidores DNS
+// (sirve para ver si un dominio propio ya quedó en Cloudflare). Hay que confirmarlo igual al comprar.
 //   node scripts/dominios.mjs faro.app pausa.help …
 // .es no tiene RDAP público: esos se informan como «consultar a mano».
 
@@ -14,7 +15,12 @@ async function check(domain) {
   try {
     const res = await fetch(`${base.replace(/\/$/, '')}/domain/${domain}`, { headers: { accept: 'application/rdap+json' } });
     if (res.status === 404) return 'libre';
-    if (res.ok) return 'ocupado';
+    if (res.ok) {
+      const d = await res.json();
+      const registrar = d.entities?.find((e) => e.roles?.includes('registrar'))?.vcardArray?.[1]?.find((f) => f[0] === 'fn')?.[3];
+      const ns = (d.nameservers ?? []).map((n) => n.ldhName?.toLowerCase()).join(', ');
+      return `ocupado · registrador: ${registrar ?? '?'} · DNS: ${ns || '?'}`;
+    }
     return `sin respuesta (${res.status})`;
   } catch (err) {
     return `sin respuesta (${err.cause?.code ?? err.name})`;
