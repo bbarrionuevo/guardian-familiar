@@ -59,8 +59,10 @@ const CONTROL_SAMPLE = 'Hola ma, se me rompió el celu, este es mi número nuevo
 // Sin el Durable Object (desarrollo), contadores en memoria que duran lo que dura el pedido.
 const countersFrom = (env: Env): Counters => (env.CONTADORES ? durableCounters(env.CONTADORES, log) : memoryCounters());
 
-function aiFrom(env: Env): AiClassifier | null {
-  return env.ANTHROPIC_API_KEY ? createClaudeClassifier({ apiKey: env.ANTHROPIC_API_KEY, workspaceId: env.ANTHROPIC_WORKSPACE_ID, model: env.GUARDIAN_MODELO, log }) : null;
+function aiFrom(env: Env, logTo: (m: string) => void = log): AiClassifier | null {
+  return env.ANTHROPIC_API_KEY
+    ? createClaudeClassifier({ apiKey: env.ANTHROPIC_API_KEY, workspaceId: env.ANTHROPIC_WORKSPACE_ID, model: env.GUARDIAN_MODELO, log: logTo })
+    : null;
 }
 
 function whatsappFrom(env: Env): Messenger | undefined {
@@ -171,7 +173,12 @@ export default {
     if (url.pathname === '/api/control' && request.method === 'GET') {
       if (!env.METRICAS_CLAVE || !safeEqual(url.searchParams.get('clave') ?? '', env.METRICAS_CLAVE)) return new Response('forbidden', { status: 403 });
       const rules = await analyze({ text: CONTROL_SAMPLE, langHint: 'es', replyLang: 'es' }, { ai: null });
-      const ai = aiFrom(env);
+      // El motivo de un error de la IA (código y mensaje de la API, con el mensaje fijo de arriba).
+      let aiError = '';
+      const ai = aiFrom(env, (m) => {
+        log(m);
+        aiError = m;
+      });
       const aiResult = ai ? await ai.classify({ text: CONTROL_SAMPLE, lang: 'es', ruleFindings: [] }) : null;
       let contadores = 'sin Durable Object';
       if (env.CONTADORES) {
@@ -181,7 +188,7 @@ export default {
           .catch(() => null);
         contadores = res?.ok ? 'ok' : `error ${res?.status ?? 'de red'}`;
       }
-      return json({ reglas: rules.level, ia: ai ? (aiResult?.level ?? 'error') : 'sin clave', contadores });
+      return json({ reglas: rules.level, ia: ai ? (aiResult?.level ?? 'error') : 'sin clave', ...(aiError ? { ia_error: aiError } : {}), contadores });
     }
 
     // En producción los assets responden antes; esto queda para desarrollo y pruebas.

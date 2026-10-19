@@ -31,12 +31,20 @@ await check('La web se ve', async () => {
 
 await check('Reglas, IA y contadores', async () => {
   if (!clave) return 'falta el secreto METRICAS_CLAVE';
-  const res = await fetch(`${url}/api/control?clave=${encodeURIComponent(clave)}`);
-  if (!res.ok) return `HTTP ${res.status}`;
-  const d = await res.json();
+  const once = async () => {
+    const res = await fetch(`${url}/api/control?clave=${encodeURIComponent(clave)}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
+  };
+  let d = await once();
+  // Un error suelto de la IA (sobrecarga, red) no merece una issue: se prueba otra vez.
+  if (d.ia === 'error') {
+    await new Promise((r) => setTimeout(r, 15_000));
+    d = await once();
+  }
   const bad = [];
   if (d.reglas !== 'alto') bad.push(`las reglas dan «${d.reglas}» a una estafa clara`);
-  if (d.ia !== 'alto') bad.push(`la IA da «${d.ia}» (si dice «error», revisá el saldo y la clave de Anthropic)`);
+  if (d.ia !== 'alto') bad.push(`la IA da «${d.ia}»${d.ia_error ? ` (${d.ia_error})` : ''}. Si es un error 400 o 401, revisá el saldo y la clave de Anthropic`);
   if (d.contadores !== 'ok') bad.push(`contadores: ${d.contadores}`);
   return bad.length ? bad.join('; ') : true;
 });
