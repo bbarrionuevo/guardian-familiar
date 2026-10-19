@@ -29,6 +29,11 @@ await check('La web se ve', async () => {
   return (res.ok && (await res.text()).includes('Pausa')) || `HTTP ${res.status}`;
 });
 
+await check('La privacidad dice quién es el responsable y cómo contactarlo', async () => {
+  const html = await (await fetch(`${url}/es/privacidad/`)).text();
+  return (html.includes('Responsable de los datos') && html.includes('mailto:')) || 'faltan las variables SITIO_RESPONSABLE y SITIO_CONTACTO en GitHub';
+});
+
 await check('Reglas, IA y contadores', async () => {
   if (!clave) return 'falta el secreto METRICAS_CLAVE';
   const once = async () => {

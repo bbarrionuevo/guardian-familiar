@@ -12,5 +12,5 @@ Para hijos y nietos hay una guía para dejar Pausa listo en el teléfono de sus 
 
 Muchas gracias. Quedo a disposición para cualquier consulta.
 
-[Nombre]
-[email de Pausa]
+Brian Barrionuevo
+Pausa · contact@pausa.family

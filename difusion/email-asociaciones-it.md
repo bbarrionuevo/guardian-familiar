@@ -12,5 +12,5 @@ Per i figli e i nipoti c’è una guida per preparare Pausa sul telefono dei gen
 
 Grazie per l’attenzione, resto a disposizione per qualsiasi domanda.
 
-[Nome]
-[email di Pausa]
+Brian Barrionuevo
+Pausa · contact@pausa.family

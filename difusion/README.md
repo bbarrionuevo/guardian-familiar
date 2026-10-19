@@ -9,7 +9,7 @@ Material para que Pausa llegue a la gente sin publicidad paga. Se prepara una ve
 | `email-asociaciones-it.md`, `email-asociaciones-es.md` | Email corto para asociaciones de jubilados, municipios y farmacias, con el afiche adjunto. |
 | `afiche-*.html`, `qr-*.svg` | Fuentes de los afiches. Se abren en el navegador y se imprimen en PDF. |
 
-**Antes de mandar nada,** completá lo que está entre corchetes: tu email de contacto de Pausa y la ciudad. Revisá también la cita, que tiene que sonar a vos. No pongas tu email personal.
+El contacto es `contact@pausa.family`, que reenvía a tu email sin mostrarlo. **Antes de mandar la nota de prensa,** revisá la cita entre corchetes, que tiene que sonar a vos.
 
 Los afiches y los textos usan **pausa.family**. Los QR llevan a `https://pausa.family/es/` y `https://pausa.family/it/`.
 

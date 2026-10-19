@@ -27,4 +27,4 @@
 
 **Para probarlo:** pausa.family/es/
 **Para las familias:** pausa.family/es/familia/
-**Contacto:** [email de Pausa] · Adjunto, el afiche para imprimir.
+**Contacto:** contact@pausa.family · Adjunto, el afiche para imprimir.

@@ -23,4 +23,4 @@
 
 **Per provarlo:** pausa.family/it/
 **Per i familiari:** pausa.family/it/famiglia/
-**Contatti:** [email di Pausa] · In allegato, il volantino da stampare.
+**Contatti:** contact@pausa.family · In allegato, il volantino da stampare.
