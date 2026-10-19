@@ -1,35 +1,28 @@
-// Consulta si unos dominios están registrados, por RDAP (y whois para .es, que no tiene RDAP).
-//   node scripts/dominios.mjs faro.app pausa.chat …
-// «libre» = el registro no lo conoce; igual hay que confirmarlo al comprar.
-import { execFileSync } from 'node:child_process';
+// Consulta si unos dominios están registrados, con RDAP: el servidor de cada terminación sale de
+// la lista oficial de IANA. 404 = libre; 200 = ocupado. Hay que confirmarlo igual al comprar.
+//   node scripts/dominios.mjs faro.app pausa.help …
+// .es no tiene RDAP público: esos se informan como «consultar a mano».
 
-const RDAP = {
-  com: 'https://rdap.verisign.com/com/v1/domain/',
-  net: 'https://rdap.verisign.com/net/v1/domain/',
-  app: 'https://pubapi.registry.google/rdap/domain/',
-  dev: 'https://pubapi.registry.google/rdap/domain/',
-  it: 'https://rdap.nic.it/domain/',
-};
+const bootstrap = await (await fetch('https://data.iana.org/rdap/dns.json')).json();
+const servers = new Map();
+for (const [tlds, urls] of bootstrap.services) for (const tld of tlds) servers.set(tld, urls[0]);
 
 async function check(domain) {
   const tld = domain.split('.').pop();
-  const base = RDAP[tld] ?? 'https://rdap.org/domain/';
-  if (tld !== 'es') {
-    try {
-      const res = await fetch(base + domain, { headers: { accept: 'application/rdap+json' }, redirect: 'follow' });
-      if (res.status === 404) return 'libre';
-      if (res.ok) return 'ocupado';
-    } catch {}
-  }
+  const base = servers.get(tld);
+  if (!base) return 'consultar a mano';
   try {
-    const out = execFileSync('whois', [domain], { encoding: 'utf8', timeout: 20000 });
-    if (/no match|not found|no entries found|status:\s*available|libre|no data found/i.test(out)) return 'libre';
-    return 'ocupado (whois)';
+    const res = await fetch(`${base.replace(/\/$/, '')}/domain/${domain}`, { headers: { accept: 'application/rdap+json' } });
+    if (res.status === 404) return 'libre';
+    if (res.ok) return 'ocupado';
+    return `sin respuesta (${res.status})`;
   } catch (err) {
-    const out = String(err.stdout ?? '');
-    if (/no match|not found|no entries found|status:\s*available|no data found/i.test(out)) return 'libre';
-    return 'sin respuesta';
+    return `sin respuesta (${err.cause?.code ?? err.name})`;
   }
 }
 
-for (const d of process.argv.slice(2)) console.log(`${d.padEnd(28)} ${await check(d.toLowerCase())}`);
+for (const d of process.argv.slice(2)) {
+  console.log(`${d.padEnd(28)} ${await check(d.toLowerCase())}`);
+  // Sin apuro: algunos registros limitan las consultas seguidas.
+  await new Promise((r) => setTimeout(r, 300));
+}
