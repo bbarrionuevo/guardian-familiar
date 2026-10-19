@@ -5,6 +5,7 @@
 //   POST /es|it/compartir     → lo que se comparte desde otra app con la app instalada
 //   POST /api/evento          → cuenta clics de «avisar a la familia» e instalaciones
 //   GET  /api/metricas?clave= → números de la validación
+//   GET  /api/control?clave=  → para el control diario: reglas, IA y contadores con un mensaje fijo
 //   GET  /salud               → control de vida
 // El resto (páginas, estilos, íconos) lo sirven los assets de public/.
 
@@ -15,6 +16,7 @@ import type { Messenger } from '../bot/canal';
 import { createTelegramApi, telegramMessenger, type TgUpdate } from '../bot/telegram-api';
 import { validSignature, whatsappIncoming, whatsappMessenger } from '../bot/whatsapp';
 import { createWorkersAiTranscriber } from '../bot/transcriptor';
+import { analyze } from '../motor/analizar';
 import { createClaudeClassifier, type AiClassifier } from '../motor/ia';
 import { siteConfig } from '../web/config';
 import { durableCounters, type CounterNamespace } from './contadores';
@@ -50,6 +52,9 @@ export interface Env {
 }
 
 const log = (m: string) => console.log(m);
+
+// Mensaje fijo del control diario: una estafa clara, que tiene que dar riesgo alto.
+const CONTROL_SAMPLE = 'Hola ma, se me rompió el celu, este es mi número nuevo. Necesito que me transfieras hoy, es urgente';
 
 // Sin el Durable Object (desarrollo), contadores en memoria que duran lo que dura el pedido.
 const countersFrom = (env: Env): Counters => (env.CONTADORES ? durableCounters(env.CONTADORES, log) : memoryCounters());
@@ -148,6 +153,23 @@ export default {
       // Por día, de las últimas dos semanas: «bot» (Telegram y WhatsApp) y «web».
       const days = Array.from({ length: 14 }, (_, i) => new Date(Date.now() - i * 86_400_000).toISOString().slice(0, 10));
       return json(await countersFrom(env).read(days));
+    }
+
+    // No cuenta como revisión: no pasa por los contadores de uso ni por las métricas.
+    if (url.pathname === '/api/control' && request.method === 'GET') {
+      if (!env.METRICAS_CLAVE || !safeEqual(url.searchParams.get('clave') ?? '', env.METRICAS_CLAVE)) return new Response('forbidden', { status: 403 });
+      const rules = await analyze({ text: CONTROL_SAMPLE, langHint: 'es', replyLang: 'es' }, { ai: null });
+      const ai = aiFrom(env);
+      const aiResult = ai ? await ai.classify({ text: CONTROL_SAMPLE, lang: 'es', ruleFindings: [] }) : null;
+      let contadores = 'sin Durable Object';
+      if (env.CONTADORES) {
+        const today = new Date().toISOString().slice(0, 10);
+        const res = await env.CONTADORES.get(env.CONTADORES.idFromName('global'))
+          .fetch('https://contadores/', { method: 'POST', body: JSON.stringify({ op: 'read', days: [today] }) })
+          .catch(() => null);
+        contadores = res?.ok ? 'ok' : `error ${res?.status ?? 'de red'}`;
+      }
+      return json({ reglas: rules.level, ia: ai ? (aiResult?.level ?? 'error') : 'sin clave', contadores });
     }
 
     // En producción los assets responden antes; esto queda para desarrollo y pruebas.

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { telegramHeaderSecret } from '../src/servidor/secreto';
 import worker, { type Env } from '../src/servidor/worker';
+import { fakeCounters } from './ayuda';
 
 const env = {
   GUARDIAN_KV: { get: async () => null, put: async () => {}, delete: async () => {}, list: async () => ({ keys: [], list_complete: true }) },
@@ -45,5 +46,15 @@ describe('worker', () => {
   it('las métricas piden clave', async () => {
     const res = await worker.fetch(new Request('https://w.dev/api/metricas?clave=x'), env, ctx());
     expect(res.status).toBe(403);
+  });
+
+  it('el control diario pide la clave y no cuenta como revisión', async () => {
+    const counters = fakeCounters();
+    const e = { ...env, METRICAS_CLAVE: 'clave', CONTADORES: counters.ns } as unknown as Env;
+    const denied = await worker.fetch(new Request('https://w.dev/api/control?clave=otra'), e, ctx());
+    expect(denied.status).toBe(403);
+    const res = await worker.fetch(new Request('https://w.dev/api/control?clave=clave'), e, ctx());
+    expect(await res.json()).toEqual({ reglas: 'alto', ia: 'sin clave', contadores: 'ok' });
+    expect([...counters.storage.data.keys()]).toEqual([]);
   });
 });

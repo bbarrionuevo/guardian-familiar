@@ -1,0 +1,51 @@
+# Control diario: la web, las reglas, la IA, los contadores, la dirección anterior y el bot de
+# Telegram. Si algo falla abre una issue (le llega a Brian por email); cuando vuelve a andar, la cierra.
+# Cuesta una consulta a la IA por día (menos de un décimo de centavo de dólar).
+name: Control diario
+
+on:
+  schedule:
+    - cron: '23 7 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  control:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Revisar el sitio y el bot
+        id: control
+        continue-on-error: true
+        env:
+          METRICAS_CLAVE: ${{ secrets.METRICAS_CLAVE }}
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          WORKER_URL: ${{ secrets.WORKER_URL }}
+        run: node scripts/control-diario.mjs /tmp/informe.md
+      - name: Abrir o cerrar la issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RESULTADO: ${{ steps.control.outcome }}
+        run: |
+          titulo="Control diario: algo no anda"
+          abierta=$(gh issue list --state open --search "in:title \"$titulo\"" --json number --jq '.[0].number // empty')
+          if [ "$RESULTADO" != "success" ]; then
+            test -s /tmp/informe.md || echo "El control no llegó a terminar. Mirá el registro: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" > /tmp/informe.md
+            if [ -n "$abierta" ]; then gh issue comment "$abierta" --body-file /tmp/informe.md
+            else gh issue create --title "$titulo" --body-file /tmp/informe.md
+            fi
+            exit 1
+          elif [ -n "$abierta" ]; then
+            gh issue close "$abierta" --comment "Volvió a andar: el control de hoy salió bien."
+          fi

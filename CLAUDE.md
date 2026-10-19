@@ -55,3 +55,4 @@ npx wrangler deploy --dry-run --outdir /tmp/worker
   - `ci.yml`: se corre en cada cambio.
   - `evaluar-ia.yml`: manual, cuesta plata.
   - `desplegar.yml`: manual.
+  - `control-diario.yml`: todos los días; abre una issue si algo no anda (`scripts/control-diario.mjs`, que usa `/api/control`).

@@ -101,6 +101,10 @@ Las respuestas a quien le escribe al bot no tienen costo en la tarifa actual de 
   - `bot` (Telegram y WhatsApp): revisiones, cuántas por nivel y por canal, con imagen o audio, alertas enviadas y usuarios activos.
   - `web`: revisiones, cuántas llegaron por «Compartir», avisos a la familia e instalaciones.
 
+## Control diario
+
+Todos los días a las 7:23 (UTC), *Control diario* revisa que respondan el Worker y la web, y que las reglas y la IA den riesgo alto a una estafa clara. También mira que anden los contadores, que la dirección anterior redirija y que Telegram le esté entregando los mensajes al bot. Si algo falla, abre la issue «Control diario: algo no anda», que te llega por email, y la cierra sola cuando vuelve a andar. La IA que se usa en el control cuesta menos de un décimo de centavo por día. También se puede correr a mano desde *Actions*.
+
 ## Costos estimados
 
 - **Cloudflare:** gratis.
