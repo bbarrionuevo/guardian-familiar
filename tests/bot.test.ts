@@ -52,6 +52,8 @@ describe('bot', () => {
     const { sent, send } = setup();
     await send(1, { text: '/start' }, 'it-IT');
     expect(sent[0]?.text).toContain('Ciao, sono Pausa');
+    // Se puede cambiar de idioma desde el saludo.
+    expect(sent[0]?.text).toContain('/idioma');
   });
 
   it('se presenta como Pausa y el perfil entra en los límites de Telegram', () => {

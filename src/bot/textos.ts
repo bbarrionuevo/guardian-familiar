@@ -28,7 +28,8 @@ export const TEXTS: Record<Lang, BotTexts> = {
       '👋 Hola, soy Pausa. Antes de responder o pagar, hagamos una pausa: si le llega un mensaje, una foto o un audio que le parece raro, reenvíemelo y le digo si tiene señales de estafa.\n\n' +
       '• Para reenviar: mantenga apretado el mensaje, toque «Reenviar» y elija Pausa.\n' +
       '• También puede pegar el texto o mandarme una captura de pantalla.\n\n' +
-      'No guardo sus mensajes. Nunca le voy a pedir datos, claves ni plata.',
+      'No guardo sus mensajes. Nunca le voy a pedir datos, claves ni plata.\n\n' +
+      '🇮🇹 Parlo anche italiano: /lingua',
     help:
       'Reenvíeme el mensaje que le parece raro (texto, captura o audio) y le contesto con el nivel de riesgo y qué hacer.\n\n' +
       '/familia: crea un enlace para que un familiar quede conectado con usted.\n' +
@@ -66,7 +67,8 @@ export const TEXTS: Record<Lang, BotTexts> = {
       '👋 Ciao, sono Pausa. Prima di rispondere o pagare, facciamo una pausa: se ti arriva un messaggio, una foto o un audio che ti sembra strano, inoltramelo e ti dico se ha segnali di truffa.\n\n' +
       '• Per inoltrare: tieni premuto il messaggio, tocca «Inoltra» e scegli Pausa.\n' +
       '• Puoi anche incollare il testo o mandarmi uno screenshot.\n\n' +
-      'Non conservo i tuoi messaggi. Non ti chiederò mai dati, password o soldi.',
+      'Non conservo i tuoi messaggi. Non ti chiederò mai dati, password o soldi.\n\n' +
+      '🇪🇸 También hablo español: /idioma',
     help:
       'Inoltrami il messaggio che ti sembra strano (testo, screenshot o audio) e ti rispondo con il livello di rischio e cosa fare.\n\n' +
       '/famiglia: crea un link per collegare un familiare.\n' +
