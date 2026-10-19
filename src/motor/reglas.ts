@@ -7,6 +7,7 @@ import type { Finding, Lang, LinkReport } from './tipos';
 
 export type SignalId =
   | 'pide_dinero'
+  | 'medio_pago'
   | 'numero_nuevo'
   | 'trato_familiar'
   | 'urgencia'
@@ -69,7 +70,6 @@ interface SignalDef {
 const SIGNALS: SignalDef[] = [
   {
     id: 'pide_dinero',
-    any: [/\b(iban|cbu|cvu|bizum|postepay|western union|moneygram)\b/, /\b(contanti|efectivo|oro|gioielli|joyas)\b/],
     it: [
       /\b(fammi|fai|fare|farmi|mandami|fammi avere) (un |il )?(bonifico|ricarica|versamento)/,
       /\bbonifico (istantaneo|immediato|urgente|su questo|a questo|di)\b/,
@@ -92,8 +92,15 @@ const SIGNALS: SignalDef[] = [
       /\b(hay que|tiene que|tenes que|debe|necesito que) (pagar|abonar|transferir|depositar|me transfieras|me deposites|me pases)/,
       /\b(abonar|pagar|depositar|transferir|abone|abona|pague) (urgente|ya|hoy|ahora|la suma|el importe|la fianza|la multa|el monto|la deuda)/,
       /\b(fianza|anticipo|adelanto|sena|rescate)\b/,
-      /\b(al alias|a este alias|a la cuenta|a esta cuenta|al siguiente alias|a nombre de|los datos de la cuenta)\b/,
     ],
+  },
+  {
+    // Nombra un medio de pago (Bizum, alias, IBAN, efectivo, joyas). Por sí solo no es un pedido:
+    // «te mandé la plata al alias» también lo dice.
+    id: 'medio_pago',
+    any: [/\b(iban|cbu|cvu|bizum|postepay|western union|moneygram)\b/, /\b(contanti|efectivo|oro|gioielli|joyas)\b/],
+    es: [/\b(al alias|a este alias|a la cuenta|a esta cuenta|al siguiente alias|a nombre de|los datos de la cuenta)\b/],
+    it: [/\b(su questo iban|sul seguente iban|intestato a)\b/],
   },
   {
     id: 'numero_nuevo',
@@ -138,18 +145,21 @@ const SIGNALS: SignalDef[] = [
   {
     id: 'amenaza_cuenta',
     it: [
-      /\b(bloccat[oa]|sospes[oa]|limitat[oa]|disattivat[oa]|disabilitat[oa]|sospensione|anomalia)\b/,
+      /\b(conto|carta|account|profilo|utenza|accesso|bancomat|home banking|pratica|posizione|whatsapp)\b.{0,40}\b(bloccat[oa]|sospes[oa]|limitat[oa]|disattivat[oa]|disabilitat[oa])\b/,
+      /\b(bloccat[oa]|sospes[oa]|limitat[oa]|disattivat[oa]|disabilitat[oa]|sospensione|blocco)\b.{0,25}\b(conto|carta|account|profilo|utenza|accesso|bancomat|pagamenti)\b/,
+      /\banomalia\b.{0,25}\b(conto|carta|account|profilo|accesso)\b/,
       /\b(accesso|attivita|operazione|movimento|disposizione|addebito|transazione|pagamento|bonifico) (anomal[oa]|sospett[oa]|non autorizzat[oa]|insolit[oa]|non riconosciut[oa])/,
       /\btentativ[oi] di accesso\b/,
       /\bse non (lo |la |l')?(riconosce|riconosci|ha (autorizzat|richiest)|hai (autorizzat|richiest))/,
-      /\b(verra|sara) (chius|bloccat|sospes|disattivat|ridott|limitat)/,
+      /\b(conto|carta|account|profilo|utenza|accesso|contatore)\b.{0,40}\b(verra|sara) (chius|bloccat|sospes|disattivat|ridott|limitat)/,
     ],
     es: [
-      /\b(bloquead[oa]|suspendid[oa]|restringid[oa]|desactivad[oa]|inhabilitad[oa]|bloqueo)\b/,
+      /\b(cuenta|tarjeta|usuario|perfil|acceso|home ?banking|clave|whatsapp)\b.{0,40}\b(bloquead[oa]|suspendid[oa]|restringid[oa]|desactivad[oa]|inhabilitad[oa])\b/,
+      /\b(bloquead[oa]|suspendid[oa]|restringid[oa]|desactivad[oa]|inhabilitad[oa]|bloqueo|suspension)\b.{0,25}\b(cuenta|tarjeta|usuario|perfil|acceso)\b/,
       /\b(acceso|actividad|operacion|movimiento|compra|cargo|transaccion|ingreso|inicio de sesion)e?s? (inusual|sospechos[oa]|no autorizad[oa]|no reconocid[oa]|indebid[oa]|irregular)/,
       /\bintentos? de acceso\b/,
       /\bsi no (la |lo )?(reconoce|reconoces|ha (autorizado|solicitado|realizado)|fuiste vos|fue usted)/,
-      /\b(sera|quedara|va a quedar) (bloquead|suspendid|cancelad|desactivad|inhabilitad)/,
+      /\b(cuenta|tarjeta|usuario|perfil|acceso|servicio|medidor)\b.{0,40}\b(sera|quedara|va a quedar) (bloquead|suspendid|cancelad|desactivad|inhabilitad)/,
     ],
   },
   {
@@ -507,19 +517,19 @@ const any = (s: Set<SignalId>, ...ids: SignalId[]) => ids.some((id) => s.has(id)
 
 // Lleva a actuar por un canal que puso el remitente: su enlace, su número, darle datos o plata.
 const pushesToAct = (s: Set<SignalId>) =>
-  any(s, 'enlace_no_oficial', 'cta_enlace', 'llamar_numero', 'pide_codigo', 'pide_datos', 'pide_dinero', 'acceso_remoto');
+  any(s, 'enlace_no_oficial', 'cta_enlace', 'llamar_numero', 'pide_codigo', 'pide_datos', 'pide_dinero', 'medio_pago', 'acceso_remoto');
 
 const COMBOS: Combo[] = [
   { pattern: 'secuestro_virtual', level: 'alto', when: (s) => s.has('secuestro'), uses: ['secuestro'] },
 
-  { pattern: 'familiar_numero_nuevo', level: 'alto', when: (s) => s.has('numero_nuevo') && any(s, 'trato_familiar', 'pide_dinero', 'urgencia'), uses: ['numero_nuevo', 'trato_familiar', 'pide_dinero', 'urgencia'] },
+  { pattern: 'familiar_numero_nuevo', level: 'alto', when: (s) => s.has('numero_nuevo') && any(s, 'trato_familiar', 'pide_dinero', 'medio_pago', 'urgencia'), uses: ['numero_nuevo', 'trato_familiar', 'pide_dinero', 'urgencia'] },
   { pattern: 'familiar_numero_nuevo', level: 'medio', when: (s) => s.has('numero_nuevo'), uses: ['numero_nuevo'] },
 
-  { pattern: 'falso_agente', level: 'alto', when: (s) => s.has('autoridad') && any(s, 'pide_dinero', 'secreto', 'retiro_en_casa') && !s.has('multa_impuesto'), uses: ['autoridad', 'pide_dinero', 'secreto', 'retiro_en_casa'] },
+  { pattern: 'falso_agente', level: 'alto', when: (s) => s.has('autoridad') && any(s, 'pide_dinero', 'medio_pago', 'secreto', 'retiro_en_casa') && !s.has('multa_impuesto'), uses: ['autoridad', 'pide_dinero', 'secreto', 'retiro_en_casa'] },
   { pattern: 'falso_agente', level: 'alto', when: (s) => has(s, 'autoridad', 'trato_familiar', 'urgencia'), uses: ['autoridad', 'trato_familiar', 'urgencia'] },
   { pattern: 'falso_agente', level: 'medio', when: (s) => s.has('autoridad') && any(s, 'trato_familiar', 'urgencia'), uses: ['autoridad', 'trato_familiar', 'urgencia'] },
 
-  { pattern: 'retiro_domicilio', level: 'alto', when: (s) => s.has('retiro_en_casa') && any(s, 'pide_dinero', 'autoridad', 'trato_familiar', 'cambio_billetes', 'se_presenta_entidad', 'marca_banco', 'urgencia'), uses: ['retiro_en_casa', 'cambio_billetes', 'se_presenta_entidad'] },
+  { pattern: 'retiro_domicilio', level: 'alto', when: (s) => s.has('retiro_en_casa') && any(s, 'pide_dinero', 'medio_pago', 'autoridad', 'trato_familiar', 'cambio_billetes', 'se_presenta_entidad', 'marca_banco', 'urgencia'), uses: ['retiro_en_casa', 'cambio_billetes', 'se_presenta_entidad'] },
   { pattern: 'retiro_domicilio', level: 'medio', when: (s) => any(s, 'retiro_en_casa', 'cambio_billetes'), uses: ['retiro_en_casa', 'cambio_billetes'] },
 
   { pattern: 'cuenta_segura', level: 'alto', when: (s) => s.has('cuenta_segura'), uses: ['cuenta_segura'] },
@@ -538,9 +548,9 @@ const COMBOS: Combo[] = [
   { pattern: 'inversion_falsa', level: 'alto', when: (s) => s.has('inversion_fuerte') || (s.has('inversion') && any(s, 'ganancia_facil', 'pide_dinero')), uses: ['inversion_fuerte', 'inversion', 'ganancia_facil'] },
   { pattern: 'inversion_falsa', level: 'medio', when: (s) => s.has('inversion') && any(s, 'enlace_no_oficial', 'cta_enlace', 'urgencia', 'contacto_externo'), uses: ['inversion'] },
 
-  { pattern: 'romance_falso', level: 'alto', when: (s) => s.has('romance') && any(s, 'pide_dinero', 'paquete', 'cargo_pequeno'), uses: ['romance', 'pide_dinero'] },
+  { pattern: 'romance_falso', level: 'alto', when: (s) => s.has('romance') && any(s, 'pide_dinero', 'medio_pago', 'paquete', 'cargo_pequeno'), uses: ['romance', 'pide_dinero'] },
 
-  { pattern: 'paquete_falso', level: 'alto', when: (s) => s.has('paquete') && any(s, 'cargo_pequeno', 'enlace_no_oficial', 'cta_enlace', 'pide_dinero', 'pide_datos'), uses: ['paquete', 'cargo_pequeno', 'cta_enlace', 'pide_datos'] },
+  { pattern: 'paquete_falso', level: 'alto', when: (s) => s.has('paquete') && any(s, 'cargo_pequeno', 'enlace_no_oficial', 'cta_enlace', 'pide_dinero', 'medio_pago', 'pide_datos'), uses: ['paquete', 'cargo_pequeno', 'cta_enlace', 'pide_datos'] },
   { pattern: 'paquete_falso', level: 'medio', when: (s) => s.has('paquete') && any(s, 'urgencia', 'llamar_numero', 'direccion_incompleta'), uses: ['paquete', 'urgencia', 'direccion_incompleta'] },
 
   { pattern: 'multa_impuesto_falso', level: 'alto', when: (s) => s.has('multa_impuesto') && any(s, 'enlace_no_oficial', 'cta_enlace', 'pide_codigo', 'pide_datos'), uses: ['multa_impuesto', 'cta_enlace', 'pide_datos'] },
@@ -549,10 +559,10 @@ const COMBOS: Combo[] = [
   { pattern: 'ayuda_publica_falsa', level: 'alto', when: (s) => s.has('ayuda_publica') && any(s, 'enlace_no_oficial', 'cta_enlace', 'pide_codigo', 'pide_datos'), uses: ['ayuda_publica', 'cta_enlace', 'pide_datos'] },
   { pattern: 'ayuda_publica_falsa', level: 'medio', when: (s) => s.has('ayuda_publica') && any(s, 'pide_dinero', 'urgencia', 'llamar_numero', 'amenaza_cuenta', 'ofrece_dinero'), uses: ['ayuda_publica', 'ofrece_dinero'] },
 
-  { pattern: 'servicio_corte_falso', level: 'alto', when: (s) => s.has('servicio_hogar') && (any(s, 'enlace_no_oficial', 'cta_enlace', 'pide_codigo', 'pide_datos') || (s.has('pide_dinero') && any(s, 'urgencia', 'factura_pendiente'))), uses: ['servicio_hogar', 'cta_enlace', 'pide_dinero'] },
+  { pattern: 'servicio_corte_falso', level: 'alto', when: (s) => s.has('servicio_hogar') && (any(s, 'enlace_no_oficial', 'cta_enlace', 'pide_codigo', 'pide_datos') || (any(s, 'pide_dinero', 'medio_pago') && any(s, 'urgencia', 'factura_pendiente'))), uses: ['servicio_hogar', 'cta_enlace', 'pide_dinero'] },
   { pattern: 'servicio_corte_falso', level: 'medio', when: (s) => s.has('servicio_hogar') && any(s, 'urgencia', 'amenaza_cuenta', 'llamar_numero', 'pide_dinero', 'factura_pendiente'), uses: ['servicio_hogar', 'urgencia'] },
 
-  { pattern: 'premio_falso', level: 'alto', when: (s) => s.has('regalo_marca') || (s.has('premio') && any(s, 'enlace_no_oficial', 'cta_enlace', 'pide_dinero', 'pide_codigo', 'pide_datos', 'cargo_pequeno', 'encuesta', 'acceso_remoto')), uses: ['regalo_marca', 'premio', 'cta_enlace', 'pide_datos'] },
+  { pattern: 'premio_falso', level: 'alto', when: (s) => s.has('regalo_marca') || (s.has('premio') && any(s, 'enlace_no_oficial', 'cta_enlace', 'pide_dinero', 'medio_pago', 'pide_codigo', 'pide_datos', 'cargo_pequeno', 'encuesta', 'acceso_remoto')), uses: ['regalo_marca', 'premio', 'cta_enlace', 'pide_datos'] },
   { pattern: 'premio_falso', level: 'medio', when: (s) => s.has('premio') && any(s, 'urgencia', 'llamar_numero', 'ofrece_dinero', 'se_presenta_entidad'), uses: ['premio'] },
 
   { pattern: 'trabajo_falso', level: 'alto', when: (s) => s.has('trabajo_fuerte') || (s.has('trabajo') && any(s, 'contacto_externo', 'ganancia_facil', 'pide_dinero')), uses: ['trabajo_fuerte', 'trabajo', 'contacto_externo'] },
@@ -567,10 +577,10 @@ const COMBOS: Combo[] = [
 
   { pattern: 'archivo_adjunto', level: 'alto', when: (s) => s.has('adjunto') && any(s, 'factura_pendiente', 'urgencia', 'amenaza_cuenta', 'multa_impuesto'), uses: ['adjunto', 'factura_pendiente'] },
 
-  { pattern: 'pedido_dinero', level: 'alto', when: (s) => s.has('pide_dinero') && (s.has('secreto') || has(s, 'trato_familiar', 'urgencia')), uses: ['pide_dinero', 'secreto', 'trato_familiar', 'urgencia'] },
+  { pattern: 'pedido_dinero', level: 'alto', when: (s) => any(s, 'pide_dinero', 'medio_pago') && (s.has('secreto') || has(s, 'trato_familiar', 'urgencia')), uses: ['pide_dinero', 'secreto', 'trato_familiar', 'urgencia'] },
   { pattern: 'pedido_dinero', level: 'medio', when: (s) => s.has('pide_dinero'), uses: ['pide_dinero'] },
 
-  { pattern: 'enlace_sospechoso', level: 'alto', when: (s) => s.has('enlace_sospechoso') && any(s, 'urgencia', 'amenaza_cuenta', 'pide_codigo', 'pide_datos', 'pide_dinero', 'paquete', 'premio', 'multa_impuesto', 'ayuda_publica', 'servicio_hogar', 'cargo_pequeno'), uses: ['enlace_sospechoso'] },
+  { pattern: 'enlace_sospechoso', level: 'alto', when: (s) => s.has('enlace_sospechoso') && any(s, 'urgencia', 'amenaza_cuenta', 'pide_codigo', 'pide_datos', 'pide_dinero', 'medio_pago', 'paquete', 'premio', 'multa_impuesto', 'ayuda_publica', 'servicio_hogar', 'cargo_pequeno'), uses: ['enlace_sospechoso'] },
   { pattern: 'enlace_sospechoso', level: 'alto', when: (s) => s.has('cta_enlace') && any(s, 'urgencia', 'amenaza_cuenta', 'pide_datos'), uses: ['cta_enlace', 'urgencia', 'pide_datos'] },
   { pattern: 'enlace_sospechoso', level: 'medio', when: (s) => any(s, 'enlace_sospechoso', 'cta_enlace'), uses: ['enlace_sospechoso', 'cta_enlace'] },
 

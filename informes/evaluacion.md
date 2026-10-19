@@ -40,6 +40,22 @@ Primero se midieron solo las reglas fijas y el análisis de enlaces. El 19/10 se
 - Entre Haiku y Opus la diferencia es de un mensaje en cada columna, lo que con 45 y 25 mensajes no es una diferencia real. Haiku cuesta unas 40 veces menos.
 - Las falsas alarmas del banco ciego vienen de las reglas, porque la IA no puede bajar el nivel. Una de ellas es un «alto», que mandaría un aviso a la familia sin motivo.
 
+## Ajuste de falsas alarmas (19/10/2026)
+
+Sin leer los mensajes del banco ciego, solo mirando qué patrón saltaba en las tres falsas alarmas, se encontraron dos reglas demasiado amplias:
+
+- «Cuenta bloqueada» saltaba con palabras sueltas como «bloqueado» o «sospesa», que también aparecen en avisos de un edificio. Ahora pide que la cuenta, la tarjeta o el acceso estén cerca.
+- «Pide plata» saltaba con solo nombrar un medio de pago (Bizum, un alias, el IBAN, efectivo). Ahora nombrar un medio de pago es una señal aparte, que suma solo junto a otras.
+
+| Solo reglas | Antes | Después |
+|---|---|---|
+| Banco ciego: estafas en «alto» | 33 de 45 | 33 de 45 |
+| Banco ciego: legítimos por encima de su máximo | 3 de 25 | 1 de 25 |
+| Banco ciego: legítimos en «alto» | 1 | 0 |
+| Banco visible: estafas en «alto» | 89 de 100 | 89 de 100 |
+
+La falsa alarma que queda es un mensaje de compraventa que da «medio» («mire en la app que el dinero haya llegado antes de entregar»). Se deja así a propósito. Como para este ajuste se miró el patrón de esos tres mensajes, el banco ciego ya no es del todo ciego para las falsas alarmas: hace falta un banco nuevo para volver a medirlas.
+
 ## Límites de los datos
 
 - **Pocas estafas textuales.** Solo 13 de las 100 del banco visible y 12 de las 45 del ciego copian el mensaje palabra por palabra. Las demás están reconstruidas a partir de la descripción de la fuente (prensa, policía, bancos), porque desde el entorno de trabajo no se podían abrir las páginas.

@@ -62,6 +62,8 @@ describe('combinaciones: estafas', () => {
     ['Para proteger su dinero debe pasarlo a una cuenta segura que le indicamos', 'alto', 'cuenta_segura'],
     ['Hola, te mandé un código por error, ¿me lo podés reenviar? Es de 6 dígitos', 'alto', 'codigo_verificacion'],
     ['Intesa Sanpaolo: accesso anomalo sul tuo conto, verifica i tuoi dati al seguente link https://intesa-verifica.top', 'alto', 'banco_falso'],
+    ['Su cuenta será bloqueada hoy. Para evitarlo, valide sus datos en el siguiente enlace', 'alto', 'banco_falso'],
+    ['Abbiamo rilevato un’anomalia sul tuo conto. Per sbloccarlo accedi al seguente link', 'alto', 'banco_falso'],
     ['Correos: su paquete está retenido. Pague 1,79 € de gastos de envío aquí: correos-envio.info/p', 'alto', 'paquete_falso'],
     ['Telepass: pedaggio non pagato. Regolarizza entro 24 ore: telepass-pagamenti.com', 'alto', 'multa_impuesto_falso'],
     ['ANSES: cobrá el bono de $70.000. Registrate en este link', 'alto', 'ayuda_publica_falsa'],
@@ -89,6 +91,10 @@ describe('combinaciones: mensajes reales que no deben alarmar', () => {
     ['Enel Energia: la bolletta di ottobre è stata emessa e sarà addebitata sul tuo conto. Nessuna azione richiesta.', 'medio'],
     ['Hola, ¿sigue disponible la bici que publicaste en Marketplace?', 'medio'],
     ['Ci vediamo alle 18 al bar sotto casa?', 'sin_senales'],
+    ['Avviso ai condomini: domani l’ascensore resterà bloccato e l’acqua sarà sospesa dalle 9 alle 12 per lavori.', 'sin_senales'],
+    ['Vecinos: el portón quedó bloqueado, el cerrajero viene a la tarde.', 'sin_senales'],
+    ['Ma, te mandé la plata al alias que me pasaste, fijate si te llegó.', 'sin_senales'],
+    ['Pago in contanti quando ci vediamo sabato, va bene?', 'sin_senales'],
   ];
   for (const [text, maxOk] of cases) {
     it(text.slice(0, 60), () => {
