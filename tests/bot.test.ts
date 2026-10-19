@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { keys, MemoryStore, type UserRecord } from '../src/bot/almacen';
 import { handleUpdate, type BotDeps, type DayStats } from '../src/bot/bot';
+import { PROFILE, TEXTS } from '../src/bot/textos';
 import type { TelegramApi, TgMessage } from '../src/bot/telegram-api';
 
 interface Sent {
@@ -39,7 +40,16 @@ describe('bot', () => {
   it('da la bienvenida en el idioma del teléfono', async () => {
     const { sent, send } = setup();
     await send(1, { text: '/start' }, 'it-IT');
-    expect(sent[0]?.text).toContain('Ciao, sono Guardiano');
+    expect(sent[0]?.text).toContain('Ciao, sono Pausa');
+  });
+
+  it('se presenta como Pausa y el perfil entra en los límites de Telegram', () => {
+    expect(JSON.stringify([TEXTS, PROFILE])).not.toMatch(/Guardi[aá]n|Guardiano/);
+    for (const p of Object.values(PROFILE)) {
+      expect(p.name).toBe('Pausa');
+      expect(p.description.length).toBeLessThanOrEqual(512);
+      expect(p.shortDescription.length).toBeLessThanOrEqual(120);
+    }
   });
 
   it('revisa un mensaje reenviado y responde con el nivel', async () => {

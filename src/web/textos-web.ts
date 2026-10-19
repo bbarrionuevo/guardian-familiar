@@ -52,13 +52,13 @@ export interface WebTexts {
 
 export const WEB: Record<Lang, WebTexts> = {
   es: {
-    siteName: 'Guardián',
+    siteName: 'Pausa',
     homeTitle: '¿Es una estafa este mensaje? Revíselo gratis',
     homeDescription:
       'Pegue el mensaje, la captura o el SMS que le llegó y le decimos si tiene señales de estafa y qué hacer. Gratis, sin registrarse y sin guardar sus mensajes.',
     homeH1: '¿Es una estafa este mensaje?',
     homeLead:
-      'Pegue el mensaje que le llegó por WhatsApp, SMS o email, o suba una captura de pantalla. En segundos le decimos si tiene señales de estafa y qué hacer.',
+      'Antes de responder o pagar, haga una pausa. Pegue el mensaje que le llegó por WhatsApp, SMS o email, o suba una captura de pantalla: en segundos le decimos si tiene señales de estafa y qué hacer.',
     navCheck: 'Revisar un mensaje',
     navGuides: 'Estafas comunes',
     otherLang: 'Italiano',
@@ -81,10 +81,10 @@ export const WEB: Record<Lang, WebTexts> = {
     installAndroid: [
       'Abra esta página en Chrome, en el celular.',
       'Toque los tres puntos ⋮ de arriba y elija «Instalar aplicación» o «Agregar a la pantalla principal».',
-      'Desde ahora, cuando le llegue un mensaje raro en WhatsApp, manténgalo apretado, toque los tres puntos ⋮, elija «Compartir» y después «Guardián».',
+      'Desde ahora, cuando le llegue un mensaje raro en WhatsApp, manténgalo apretado, toque los tres puntos ⋮, elija «Compartir» y después «Pausa».',
     ],
     installIphone: 'En iPhone todavía no se puede compartir directo: copie el mensaje y péguelo en esta página, o use el bot de Telegram.',
-    installButton: 'Instalar Guardián',
+    installButton: 'Instalar Pausa',
     telegramH2: 'También en Telegram',
     telegramText:
       'Si usa Telegram, reenvíe el mensaje a nuestro bot. Además puede vincular a un familiar: cuando le llegue algo de riesgo alto, le avisamos también a esa persona.',
@@ -100,20 +100,20 @@ export const WEB: Record<Lang, WebTexts> = {
     guideCheckH2: '¿Le llegó un mensaje parecido? Revíselo acá',
     privacyTitle: 'Privacidad',
     privacyLink: 'Privacidad',
-    footerNote: 'Guardián no guarda los mensajes que revisa. Nunca le vamos a pedir datos, claves ni dinero.',
+    footerNote: 'Pausa no guarda los mensajes que revisa. Nunca le vamos a pedir datos, claves ni dinero.',
     sharedTitle: 'Resultado de la revisión',
     sharedBack: 'Revisar otro mensaje',
     notFoundTitle: 'Página no encontrada',
     notFoundText: 'Esta página no existe. Puede revisar un mensaje desde el inicio.',
   },
   it: {
-    siteName: 'Guardiano',
+    siteName: 'Pausa',
     homeTitle: 'È una truffa questo messaggio? Controllalo gratis',
     homeDescription:
       'Incolla il messaggio, lo screenshot o l’SMS che hai ricevuto e ti diciamo se ha segnali di truffa e cosa fare. Gratis, senza registrazione e senza conservare i tuoi messaggi.',
     homeH1: 'È una truffa questo messaggio?',
     homeLead:
-      'Incolla il messaggio che ti è arrivato su WhatsApp, via SMS o email, oppure carica uno screenshot. In pochi secondi ti diciamo se ha segnali di truffa e cosa fare.',
+      'Prima di rispondere o pagare, fai una pausa. Incolla il messaggio che ti è arrivato su WhatsApp, via SMS o email, oppure carica uno screenshot: in pochi secondi ti diciamo se ha segnali di truffa e cosa fare.',
     navCheck: 'Controlla un messaggio',
     navGuides: 'Truffe comuni',
     otherLang: 'Español',
@@ -136,10 +136,10 @@ export const WEB: Record<Lang, WebTexts> = {
     installAndroid: [
       'Apri questa pagina con Chrome, sul telefono.',
       'Tocca i tre puntini ⋮ in alto e scegli «Installa app» o «Aggiungi a schermata Home».',
-      'Da ora, quando ti arriva un messaggio strano su WhatsApp, tienilo premuto, tocca i tre puntini ⋮, scegli «Condividi» e poi «Guardiano».',
+      'Da ora, quando ti arriva un messaggio strano su WhatsApp, tienilo premuto, tocca i tre puntini ⋮, scegli «Condividi» e poi «Pausa».',
     ],
     installIphone: 'Su iPhone non si può ancora condividere direttamente: copia il messaggio e incollalo in questa pagina, oppure usa il bot di Telegram.',
-    installButton: 'Installa Guardiano',
+    installButton: 'Installa Pausa',
     telegramH2: 'Anche su Telegram',
     telegramText:
       'Se usi Telegram, inoltra il messaggio al nostro bot. Puoi anche collegare un familiare: quando ti arriva qualcosa a rischio alto, avvisiamo anche quella persona.',
@@ -155,7 +155,7 @@ export const WEB: Record<Lang, WebTexts> = {
     guideCheckH2: 'Ti è arrivato un messaggio simile? Controllalo qui',
     privacyTitle: 'Privacy',
     privacyLink: 'Privacy',
-    footerNote: 'Guardiano non conserva i messaggi che controlla. Non ti chiederemo mai dati, password o soldi.',
+    footerNote: 'Pausa non conserva i messaggi che controlla. Non ti chiederemo mai dati, password o soldi.',
     sharedTitle: 'Risultato del controllo',
     sharedBack: 'Controlla un altro messaggio',
     notFoundTitle: 'Pagina non trovata',

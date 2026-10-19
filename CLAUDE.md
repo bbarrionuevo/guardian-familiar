@@ -1,6 +1,6 @@
-# Guardián familiar — instrucciones para las sesiones de Claude
+# Pausa — instrucciones para las sesiones de Claude
 
-Bot antiestafas para personas mayores (IT, ES, AR). TypeScript sobre Cloudflare Workers + KV; Claude como tercera capa. El responsable es Brian Barrionuevo.
+Bot y web antiestafas para personas mayores (IT, ES, AR). Antes se llamaba «Guardián familiar»: el repositorio, el KV y algunos nombres internos siguen así. TypeScript sobre Cloudflare Workers + KV; Claude como tercera capa. El responsable es Brian Barrionuevo.
 
 ## Reglas fijas
 - **Nunca se guarda el contenido revisado** (texto, imágenes, audios), ni en KV ni en registros. Solo contadores, idioma, nombre de Telegram y vínculos. `tests/bot.test.ts` lo comprueba.
@@ -13,6 +13,7 @@ Bot antiestafas para personas mayores (IT, ES, AR). TypeScript sobre Cloudflare 
 ## Idiomas
 - Comentarios del código y commits: en español.
 - Textos del bot en italiano: con «tu». En español: con «usted», neutro, que sirva en España y en Argentina.
+- Se llama **Pausa** en los dos idiomas. Cuando habla de sí mismo, sin palabras con género («non riesco», no «non sono riuscito»).
 - Con Brian: español rioplatense (voseo).
 
 ## Antes de cada commit
@@ -37,11 +38,12 @@ npx wrangler deploy --dry-run --outdir /tmp/worker
   - `almacen.ts`: KV. Las claves de Telegram no llevan prefijo; las de WhatsApp, `wa:`.
   - `transcriptor.ts` y `textos.ts`.
 - `src/servidor/worker.ts`: las rutas del Worker; `web.ts`: las de la web (revisar, compartir, eventos).
+- `redireccion/`: el Worker de la dirección anterior (`guardian-familiar.*.workers.dev`), que manda todo a la nueva.
 - `src/web/`: la web.
   - `guias.ts`: el contenido de las guías; los ejemplos salen del banco por id.
   - `plantilla.ts`: el HTML.
   - `textos-web.ts`: los textos.
-  - `web/`: estilos, script, service worker e íconos.
+  - `web/`: estilos, script, service worker e íconos (`scripts/generar-iconos.mjs` los dibuja).
   - `scripts/generar-web.ts` escribe `public/`, que no se sube al repositorio.
 - `data/banco/`: el banco de mensajes.
   - Estafas con fuente: `verbatim` dice si el texto es literal.

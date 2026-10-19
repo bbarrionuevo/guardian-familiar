@@ -24,8 +24,8 @@ interface BotTexts {
 export const TEXTS: Record<Lang, BotTexts> = {
   es: {
     welcome:
-      '👋 Hola, soy Guardián. Si le llega un mensaje, una foto o un audio que le parece raro, reenvíemelo y le digo si tiene señales de estafa.\n\n' +
-      '• Para reenviar: mantenga apretado el mensaje, toque «Reenviar» y elija Guardián.\n' +
+      '👋 Hola, soy Pausa. Antes de responder o pagar, hagamos una pausa: si le llega un mensaje, una foto o un audio que le parece raro, reenvíemelo y le digo si tiene señales de estafa.\n\n' +
+      '• Para reenviar: mantenga apretado el mensaje, toque «Reenviar» y elija Pausa.\n' +
       '• También puede pegar el texto o mandarme una captura de pantalla.\n\n' +
       'No guardo sus mensajes. Nunca le voy a pedir datos, claves ni plata.',
     help:
@@ -47,7 +47,7 @@ export const TEXTS: Record<Lang, BotTexts> = {
     limit: (n) => `Hoy ya revisé ${n} mensajes suyos. Mañana sigo. Mientras tanto: no pague ni dé datos, y ante la duda consulte a un familiar.`,
     inviteForChild: (link) =>
       `Para que le avise cuando su familiar reciba un mensaje de riesgo alto, mándele el mensaje de abajo y pídale que toque el enlace. El enlace vale 7 días.\n\n${link}`,
-    inviteToForward: (link) => `Hola, te paso Guardián, un asistente que revisa mensajes sospechosos. Con este enlace quedamos conectados: ${link}`,
+    inviteToForward: (link) => `Hola, te paso Pausa, un asistente que revisa mensajes sospechosos. Con este enlace quedamos conectados: ${link}`,
     linkedParent: (child) => `✅ Listo. Cuando le llegue un mensaje de riesgo alto, también le aviso a ${child}.`,
     linkedChild: (parent) => `✅ Ya está: ${parent} abrió su enlace. Le voy a avisar cuando reciba un mensaje de riesgo alto.`,
     inviteInvalid: 'Ese enlace ya no vale. Pídale a su familiar uno nuevo.',
@@ -58,8 +58,8 @@ export const TEXTS: Record<Lang, BotTexts> = {
   },
   it: {
     welcome:
-      '👋 Ciao, sono Guardiano. Se ti arriva un messaggio, una foto o un audio che ti sembra strano, inoltramelo e ti dico se ha segnali di truffa.\n\n' +
-      '• Per inoltrare: tieni premuto il messaggio, tocca «Inoltra» e scegli Guardiano.\n' +
+      '👋 Ciao, sono Pausa. Prima di rispondere o pagare, facciamo una pausa: se ti arriva un messaggio, una foto o un audio che ti sembra strano, inoltramelo e ti dico se ha segnali di truffa.\n\n' +
+      '• Per inoltrare: tieni premuto il messaggio, tocca «Inoltra» e scegli Pausa.\n' +
       '• Puoi anche incollare il testo o mandarmi uno screenshot.\n\n' +
       'Non conservo i tuoi messaggi. Non ti chiederò mai dati, password o soldi.',
     help:
@@ -81,7 +81,7 @@ export const TEXTS: Record<Lang, BotTexts> = {
     limit: (n) => `Oggi ho già controllato ${n} tuoi messaggi. Continuo domani. Nel frattempo: non pagare e non dare dati, e nel dubbio chiedi a un familiare.`,
     inviteForChild: (link) =>
       `Per ricevere un avviso quando un tuo familiare riceve un messaggio a rischio alto, mandagli il messaggio qui sotto e chiedigli di aprire il link. Il link vale 7 giorni.\n\n${link}`,
-    inviteToForward: (link) => `Ciao, ti mando Guardiano, un assistente che controlla i messaggi sospetti. Con questo link restiamo collegati: ${link}`,
+    inviteToForward: (link) => `Ciao, ti mando Pausa, un assistente che controlla i messaggi sospetti. Con questo link restiamo collegati: ${link}`,
     linkedParent: (child) => `✅ Fatto. Quando ti arriva un messaggio a rischio alto, avviso anche ${child}.`,
     linkedChild: (parent) => `✅ Fatto: ${parent} ha aperto il tuo link. Ti avviserò quando riceve un messaggio a rischio alto.`,
     inviteInvalid: 'Questo link non è più valido. Chiedi al tuo familiare di mandartene uno nuovo.',
@@ -89,6 +89,23 @@ export const TEXTS: Record<Lang, BotTexts> = {
     unlinked: 'Fatto, ho cancellato i collegamenti con la tua famiglia.',
     nothingToUnlink: 'Non sei collegato a nessun familiare.',
     familyNotified: '📣 Ho avvisato il tuo familiare.',
+  },
+};
+
+// Perfil del bot en Telegram: nombre, descripción del chat vacío (hasta 512 caracteres) y
+// descripción corta del perfil (hasta 120). Los carga scripts/configurar-webhook.ts.
+export const PROFILE: Record<Lang, { name: string; description: string; shortDescription: string }> = {
+  es: {
+    name: 'Pausa',
+    description:
+      'Antes de responder o pagar, una pausa. Reenvíeme el mensaje que le parece raro (texto, captura de pantalla o audio) y le digo si tiene señales de estafa y qué hacer. Si vincula a un familiar, también le aviso cuando el riesgo es alto. No guardo sus mensajes.',
+    shortDescription: 'Reenvíeme un mensaje raro y le digo si tiene señales de estafa.',
+  },
+  it: {
+    name: 'Pausa',
+    description:
+      'Prima di rispondere o pagare, una pausa. Inoltrami il messaggio che ti sembra strano (testo, screenshot o audio) e ti dico se ha segnali di truffa e cosa fare. Se colleghi un familiare, avviso anche quella persona quando il rischio è alto. Non conservo i tuoi messaggi.',
+    shortDescription: 'Inoltrami un messaggio strano e ti dico se ha segnali di truffa.',
   },
 };
 

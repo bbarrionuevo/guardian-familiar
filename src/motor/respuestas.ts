@@ -266,8 +266,8 @@ const NOTES: Record<Lang, Record<Note, string>> = {
     texto_vacio: 'No recibí nada para revisar. Reenvíeme el mensaje que le parece sospechoso.',
   },
   it: {
-    imagen_sin_ia: "Non sono riuscito a leggere l'immagine. Copia il testo del messaggio e mandamelo.",
-    audio_sin_transcripcion: "Non sono riuscito a capire l'audio. Se puoi, scrivimi cosa dice.",
+    imagen_sin_ia: "Non riesco a leggere l'immagine. Copia il testo del messaggio e mandamelo.",
+    audio_sin_transcripcion: "Non riesco a capire l'audio. Se puoi, scrivimi cosa dice.",
     ia_no_disponible: 'Questa volta ho controllato solo con le regole fisse. Nel dubbio, chiedi a un familiare.',
     texto_vacio: 'Non ho ricevuto niente da controllare. Inoltrami il messaggio che ti sembra sospetto.',
   },

@@ -1,0 +1,8 @@
+# Worker con la dirección anterior del sitio: redirige todo a Pausa. El despliegue le pasa la
+# dirección nueva en DESTINO (con --var), así sigue a Pausa si cambia de dirección.
+name = "guardian-familiar"
+main = "worker.ts"
+compatibility_date = "2025-09-15"
+
+[vars]
+DESTINO = "https://pausa.briaan-b.workers.dev"

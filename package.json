@@ -1,8 +1,8 @@
 {
-  "name": "guardian-familiar",
+  "name": "pausa",
   "version": "0.1.0",
   "private": true,
-  "description": "Guardián familiar antiestafas: bot que analiza mensajes sospechosos y avisa a la familia.",
+  "description": "Pausa: revisa mensajes sospechosos para personas mayores y avisa a la familia.",
   "type": "module",
   "license": "UNLICENSED",
   "scripts": {

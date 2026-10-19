@@ -34,3 +34,5 @@ jobs:
         run: npx tsx scripts/evaluar.ts --solo-reglas --ciego
       - name: El Worker se empaqueta
         run: npx wrangler deploy --dry-run --outdir /tmp/worker
+      - name: La redirección de la dirección anterior se empaqueta
+        run: npx wrangler deploy --dry-run --config redireccion/wrangler.toml --outdir /tmp/redireccion

@@ -41,16 +41,19 @@ export function page(o: PageOptions, site: SiteConfig): string {
     ? `<link rel="alternate" hreflang="${o.lang}" href="${site.url}${o.path}">
 <link rel="alternate" hreflang="${other}" href="${site.url}${o.altPath}">`
     : '';
+  // El nombre va al final de cada título, para que se reconozca en Google y al compartir.
+  const title = o.title.includes(t.siteName) ? o.title : `${o.title} · ${t.siteName}`;
   return `<!doctype html>
 <html lang="${o.lang}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${esc(o.title)}</title>
+<title>${esc(title)}</title>
 <meta name="description" content="${esc(o.description)}">
 ${o.noindex ? '<meta name="robots" content="noindex">' : `<link rel="canonical" href="${site.url}${o.path}">`}
 ${hreflang}
-<meta property="og:title" content="${esc(o.title)}">
+<meta property="og:title" content="${esc(title)}">
+<meta property="og:site_name" content="${t.siteName}">
 <meta property="og:description" content="${esc(o.description)}">
 <meta property="og:type" content="website">
 <meta property="og:url" content="${site.url}${o.path}">
@@ -189,9 +192,9 @@ ${checker(lang, t.guideCheckH2)}`;
 const PRIVACY: Record<Lang, { title: string; description: string; paragraphs: string[] }> = {
   es: {
     title: 'Privacidad',
-    description: 'Qué hace Guardián con los mensajes que revisa: no los guarda, los analiza y los descarta.',
+    description: 'Qué hace Pausa con los mensajes que revisa: no los guarda, los analiza y los descarta.',
     paragraphs: [
-      'Guardián revisa los mensajes que usted pega, sube o comparte para decirle si tienen señales de estafa. No los guarda: se analizan en el momento y se descartan.',
+      'Pausa revisa los mensajes que usted pega, sube o comparte para decirle si tienen señales de estafa. No los guarda: se analizan en el momento y se descartan.',
       'Para revisarlos usamos reglas propias y, cuando hace falta, la inteligencia artificial de Anthropic (Claude). El texto o la imagen se envían a Anthropic solo para esa revisión. Según sus condiciones para empresas, Anthropic no usa estos datos para entrenar su IA.',
       'La web y el bot funcionan sobre Cloudflare. Para evitar abusos contamos cuántas revisiones se hacen por día desde cada conexión; ese contador se borra solo a los dos días. También guardamos totales por día (cuántas revisiones y de qué nivel), sin el contenido.',
       'En el bot de Telegram guardamos solo su idioma, su nombre de Telegram y, si usted lo pide, con qué familiar está vinculado. Con el comando /desvincular se borran los vínculos.',
@@ -200,9 +203,9 @@ const PRIVACY: Record<Lang, { title: string; description: string; paragraphs: st
   },
   it: {
     title: 'Privacy',
-    description: 'Cosa fa Guardiano con i messaggi che controlla: non li conserva, li analizza e li scarta.',
+    description: 'Cosa fa Pausa con i messaggi che controlla: non li conserva, li analizza e li scarta.',
     paragraphs: [
-      'Guardiano controlla i messaggi che incolli, carichi o condividi per dirti se hanno segnali di truffa. Non li conserva: vengono analizzati al momento e poi scartati.',
+      'Pausa controlla i messaggi che incolli, carichi o condividi per dirti se hanno segnali di truffa. Non li conserva: vengono analizzati al momento e poi scartati.',
       'Per controllarli usiamo regole nostre e, quando serve, l’intelligenza artificiale di Anthropic (Claude). Il testo o l’immagine vengono inviati ad Anthropic solo per quel controllo. Secondo le sue condizioni per le aziende, Anthropic non usa questi dati per addestrare la sua IA.',
       'Il sito e il bot funzionano su Cloudflare. Per evitare abusi contiamo quanti controlli arrivano ogni giorno da ciascuna connessione; il contatore si cancella da solo dopo due giorni. Conserviamo anche i totali giornalieri (quanti controlli e di che livello), senza il contenuto.',
       'Nel bot di Telegram conserviamo solo la tua lingua, il tuo nome su Telegram e, se lo chiedi, a quale familiare sei collegato. Con il comando /scollega i collegamenti vengono cancellati.',
@@ -214,7 +217,7 @@ const PRIVACY: Record<Lang, { title: string; description: string; paragraphs: st
 export function privacyPage(lang: Lang, site: SiteConfig): string {
   const p = PRIVACY[lang];
   const body = `<article class="guide"><h1>${esc(p.title)}</h1>${p.paragraphs.map((x) => `<p>${esc(x)}</p>`).join('\n')}</article>`;
-  return page({ lang, path: privacyPath(lang), title: `${p.title} · ${WEB[lang].siteName}`, description: p.description, body, altPath: privacyPath(lang === 'es' ? 'it' : 'es') }, site);
+  return page({ lang, path: privacyPath(lang), title: p.title, description: p.description, body, altPath: privacyPath(lang === 'es' ? 'it' : 'es') }, site);
 }
 
 // Página de resultado cuando el mensaje llega por «Compartir» desde otra app.

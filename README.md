@@ -1,21 +1,23 @@
-# Guardián familiar antiestafas
+# Pausa: antiestafas para la familia
 
-Bot que revisa mensajes sospechosos para personas mayores en Italia, España y Argentina. La persona reenvía el mensaje (texto, captura de pantalla o audio) y el bot contesta con un nivel de riesgo y una sola acción concreta. Si el riesgo es alto, avisa también al familiar vinculado.
+**Antes de responder o pagar, una pausa.** Pausa revisa mensajes sospechosos para personas mayores en Italia, España y Argentina. La persona reenvía el mensaje (texto, captura de pantalla o audio) y el bot contesta con un nivel de riesgo y una sola acción concreta. Si el riesgo es alto, avisa también al familiar vinculado.
 
 - Niveles: **alto**, **medio** o **sin señales**. El bot nunca dice que algo es «seguro».
 - Idiomas: italiano (con «tu») y español (con «usted», sirve en España y en Argentina).
 - Canal de prueba: Telegram. WhatsApp necesita la aprobación de Meta y viene después de validar.
+- Dirección: https://pausa.briaan-b.workers.dev (`/es/` y `/it/`). La anterior, `guardian-familiar.briaan-b.workers.dev`, redirige a esta con la misma ruta (`redireccion/`, se publica con *Desplegar*).
+- Antes se llamaba «Guardián familiar». El repositorio, el espacio KV y algunos nombres internos (`GUARDIAN_KV`, `GUARDIAN_MODELO`) siguen con el nombre viejo: cambiarlos no le sirve a nadie y obliga a tocar los secretos.
 
 ## La web
 
 El mismo Worker sirve una web en español (`/es/`) y en italiano (`/it/`), generada con `npm run build:web` en `public/`:
 
 - **Verificador:** se pega el mensaje o se sube una captura, y responde igual que el bot.
-- **App instalable:** en Android, con Chrome, se instala desde el menú. Después, en WhatsApp se mantiene apretado un mensaje y se elige «Compartir → Guardián», sin copiar ni pegar.
+- **App instalable:** en Android, con Chrome, se instala desde el menú. Después, en WhatsApp se mantiene apretado un mensaje y se elige «Compartir → Pausa», sin copiar ni pegar.
 - **Avisar a la familia:** cada resultado de riesgo y cada guía tienen un botón para mandar el aviso a un grupo de WhatsApp. Es la forma de que el sitio se difunda solo.
 - **Guías:** 12 estafas comunes por idioma, con ejemplos reales y sus fuentes, para que lleguen visitas desde Google.
 
-Para cambiar la dirección del sitio (al comprar un dominio), se cambia `SITIO_URL` en `src/web/config.ts`.
+Para cambiar la dirección del sitio (al comprar un dominio), se cambia `SITIO_URL` en `src/web/config.ts`. El ícono se dibuja con `node scripts/generar-iconos.mjs`.
 
 ## Cómo decide
 
@@ -27,9 +29,9 @@ Los audios se pasan a texto con Whisper de Cloudflare. No se guarda el texto, la
 
 ## Qué tiene que hacer Brian (una sola vez)
 
-1. **Bot de Telegram.** En Telegram, abrí [@BotFather](https://t.me/BotFather), mandá `/newbot`, poné de nombre «Guardián» y elegí un usuario terminado en `bot` (por ejemplo `GuardianFamiliarBot`). Guardá el token que te da.
+1. **Bot de Telegram.** En Telegram, abrí [@BotFather](https://t.me/BotFather), mandá `/newbot`, poné de nombre «Pausa» y elegí un usuario terminado en `bot`. Guardá el token que te da. El nombre y las descripciones en los dos idiomas los carga *Desplegar*; la foto se sube a mano con `/setuserpic` en BotFather.
 2. **Cloudflare** (gratis). Creá una cuenta en cloudflare.com y después:
-   - En *Storage & Databases → KV*, creá un espacio llamado `guardian` y copiá su **ID**.
+   - En *Storage & Databases → KV*, creá un espacio (el actual se llama `Guardian_Familiar`) y copiá su **ID**.
    - En *My Profile → API Tokens*, creá un token con la plantilla «Edit Cloudflare Workers» y sumale el permiso «Workers AI: Read».
    - Copiá tu **Account ID** (aparece en la página principal de Workers).
 3. **Anthropic.** En console.anthropic.com creá una clave de API y poné un **límite de gasto mensual** (por ejemplo, US$ 20).
@@ -61,7 +63,7 @@ El código ya está listo. Mientras falten estas claves, el canal queda apagado 
    - el *App Secret*, en *App settings → Basic*;
    - un token permanente: en la configuración del negocio, *System users*, creá un usuario y generá un token con el permiso `whatsapp_business_messaging`. El token de la página de prueba vence a las 24 horas.
 4. **Webhook.** En *WhatsApp → Configuration*:
-   - poné como URL `https://guardian-familiar.briaan-b.workers.dev/whatsapp/webhook`;
+   - poné como URL `https://pausa.briaan-b.workers.dev/whatsapp/webhook`;
    - como «Verify token», una contraseña inventada (la misma que va en `WHATSAPP_VERIFY_TOKEN`);
    - suscribite al campo `messages`.
 5. **Plantilla del aviso a la familia (opcional pero recomendable).** WhatsApp solo deja escribirle a alguien que no habló con el bot en las últimas 24 horas con una plantilla aprobada. Creá una de categoría «Utility» llamada `alerta_familia`, en español y en italiano:

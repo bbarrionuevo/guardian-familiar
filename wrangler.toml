@@ -1,5 +1,5 @@
 # Configuración del Worker. El id del espacio KV se reemplaza en el despliegue (secreto KV_ID).
-name = "guardian-familiar"
+name = "pausa"
 main = "src/servidor/worker.ts"
 compatibility_date = "2025-09-15"
 compatibility_flags = ["nodejs_compat"]

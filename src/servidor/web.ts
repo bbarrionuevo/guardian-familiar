@@ -104,7 +104,7 @@ export async function handleAnalyze(request: Request, kv: KVNamespace, ai: AiCla
   });
 }
 
-// POST /es/compartir y /it/compartir: lo que manda Android al elegir «Compartir → Guardián».
+// POST /es/compartir y /it/compartir: lo que manda Android al elegir «Compartir → Pausa».
 export async function handleShare(request: Request, lang: Lang, kv: KVNamespace, ai: AiClassifier | null, site: SiteConfig): Promise<Response> {
   if (request.method !== 'POST') return Response.redirect(new URL(`/${lang}/`, request.url).toString(), 303);
   const form = await request.formData().catch(() => null);

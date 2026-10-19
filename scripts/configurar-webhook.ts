@@ -1,6 +1,7 @@
-// Conecta el bot de Telegram con el Worker y carga los comandos en los dos idiomas.
-//   BOT_TOKEN=… TELEGRAM_SECRET=… WORKER_URL=https://guardian-familiar.<cuenta>.workers.dev npx tsx scripts/configurar-webhook.ts
+// Conecta el bot de Telegram con el Worker y carga los comandos y el perfil en los dos idiomas.
+//   BOT_TOKEN=… TELEGRAM_SECRET=… WORKER_URL=https://pausa.<cuenta>.workers.dev npx tsx scripts/configurar-webhook.ts
 
+import { PROFILE } from '../src/bot/textos';
 import { telegramHeaderSecret } from '../src/servidor/secreto';
 
 const token = process.env.BOT_TOKEN;
@@ -12,15 +13,29 @@ if (!token || !secret || !workerUrl) {
   process.exit(1);
 }
 
-async function call(method: string, body: Record<string, unknown>) {
+async function call(method: string, body: Record<string, unknown>, quiet = false): Promise<Record<string, unknown>> {
   const res = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),
   });
-  const data = (await res.json()) as { ok: boolean; description?: string };
+  const data = (await res.json()) as { ok: boolean; description?: string; result?: unknown };
   if (!data.ok) throw new Error(`${method}: ${data.description ?? res.status}`);
-  console.log(`${method}: ok`);
+  if (!quiet) console.log(`${method}: ok`);
+  return (data.result ?? {}) as Record<string, unknown>;
+}
+
+// Telegram limita mucho los cambios de nombre y descripción: se manda solo lo que cambió, y un
+// error ahí avisa pero no frena el despliegue.
+async function ensure(field: 'name' | 'description' | 'short_description', value: string, scope: Record<string, string>) {
+  const suffix = { name: 'Name', description: 'Description', short_description: 'ShortDescription' }[field];
+  try {
+    const current = await call(`getMy${suffix}`, scope, true);
+    if (current[field] === value) return;
+    await call(`setMy${suffix}`, { [field]: value, ...scope });
+  } catch (err) {
+    console.warn(`Aviso: no se pudo cargar ${field} (${scope.language_code ?? 'por defecto'}): ${(err as Error).message}`);
+  }
 }
 
 await call('setWebhook', {
@@ -62,3 +77,11 @@ await call('setMyCommands', {
     { command: 'lingua', description: 'Italiano' },
   ],
 });
+
+// Perfil: en español, en italiano y, para el resto de los idiomas, en español.
+for (const [lang, scope] of [['es', { language_code: 'es' }], ['it', { language_code: 'it' }], ['es', {}]] as const) {
+  const p = PROFILE[lang];
+  await ensure('name', p.name, scope);
+  await ensure('description', p.description, scope);
+  await ensure('short_description', p.shortDescription, scope);
+}

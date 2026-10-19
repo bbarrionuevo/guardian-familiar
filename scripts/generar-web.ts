@@ -84,7 +84,7 @@ function rootPage(siteUrl: string): string {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Guardián · Guardiano</title>
+<title>Pausa</title>
 <meta name="description" content="¿Es una estafa este mensaje? · È una truffa questo messaggio?">
 <link rel="alternate" hreflang="es" href="${siteUrl}/es/">
 <link rel="alternate" hreflang="it" href="${siteUrl}/it/">
@@ -100,7 +100,7 @@ function rootPage(siteUrl: string): string {
 </head>
 <body>
 <main class="wrap">
-  <h1>Guardián · Guardiano</h1>
+  <h1>Pausa</h1>
   <div class="lang-pick">
     <a class="button-link" href="/es/" hreflang="es" lang="es">Español</a>
     <a class="button-link" href="/it/" hreflang="it" lang="it">Italiano</a>

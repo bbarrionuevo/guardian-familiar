@@ -1,5 +1,5 @@
 // Service worker mínimo: deja instalar la app y muestra la página de inicio guardada si no hay conexión.
-var CACHE = 'guardian-v1';
+var CACHE = 'pausa-v1';
 var SHELL = ['/es/', '/it/', '/estilos.css', '/app.js', '/icono.svg'];
 
 self.addEventListener('install', function (event) {

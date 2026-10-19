@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
 import worker, { type Env } from '../src/servidor/worker';
@@ -30,7 +30,7 @@ describe('web generada', () => {
         expect(html).toMatch(/<meta name="description" content="[^"]{60,}">/);
         expect(html).toContain(`rel="canonical" href="https://`);
         const other = lang === 'es' ? 'it' : 'es';
-        expect(html).toContain(`hreflang="${other}" href="https://guardian-familiar.briaan-b.workers.dev${guidePath(g, other)}"`);
+        expect(html).toContain(`hreflang="${other}" href="https://pausa.briaan-b.workers.dev${guidePath(g, other)}"`);
         expect(html).toContain('<h1>');
         expect(html).toContain('<blockquote>');
         expect(html).toContain('https://wa.me/?text=');
@@ -57,6 +57,15 @@ describe('web generada', () => {
       expect(m.icons.length).toBeGreaterThanOrEqual(2);
       for (const icon of m.icons) expect(existsSync(join(PUBLIC, icon.src))).toBe(true);
     }
+  });
+
+  it('todas las páginas llevan el nombre Pausa y ninguna el anterior', () => {
+    const pages = (readdirSync(PUBLIC, { recursive: true }) as string[]).filter((f) => f.endsWith('.html') || f.endsWith('.webmanifest'));
+    expect(pages.length).toBeGreaterThan(20);
+    for (const f of pages) expect(read(f), f).not.toMatch(/Guardi[aá]n|Guardiano/);
+    expect(read('es/')).toContain('<title>¿Es una estafa este mensaje? Revíselo gratis · Pausa</title>');
+    expect(read('it/')).toContain('<meta property="og:site_name" content="Pausa">');
+    expect(JSON.parse(read('it/manifest.webmanifest')).name).toBe('Pausa');
   });
 
   it('el sitemap lista todas las páginas', () => {
@@ -121,7 +130,7 @@ describe('rutas web del Worker', () => {
       env,
       ctx,
     );
-    expect(((await small.json()) as { respuesta: string }).respuesta).toContain("Non sono riuscito a leggere l'immagine");
+    expect(((await small.json()) as { respuesta: string }).respuesta).toContain("Non riesco a leggere l'immagine");
     const big = await worker.fetch(
       new Request('https://w.dev/api/analizar', { method: 'POST', body: JSON.stringify({ imagen: { tipo: 'image/jpeg', base64: 'A'.repeat(5_000_000) } }) }),
       env,

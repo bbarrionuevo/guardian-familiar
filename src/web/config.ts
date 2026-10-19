@@ -6,7 +6,7 @@ export interface SiteConfig {
 
 export function siteConfig(env: Record<string, string | undefined> = {}): SiteConfig {
   return {
-    url: (env.SITIO_URL || 'https://guardian-familiar.briaan-b.workers.dev').replace(/\/$/, ''),
+    url: (env.SITIO_URL || 'https://pausa.briaan-b.workers.dev').replace(/\/$/, ''),
     botUsername: (env.BOT_USERNAME || 'guardian_familiar_bot').replace(/^@/, ''),
   };
 }

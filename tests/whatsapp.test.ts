@@ -83,7 +83,7 @@ describe('familia entre canales', () => {
 
     sent.length = 0;
     await handleIncoming(wa(`fam_${code}`), deps);
-    expect(sent.some((s) => s.channel === 'whatsapp' && s.text.includes('Hola, soy Guardián'))).toBe(true);
+    expect(sent.some((s) => s.channel === 'whatsapp' && s.text.includes('Hola, soy Pausa'))).toBe(true);
     expect(sent.some((s) => s.channel === 'telegram' && s.text.includes('Rosa abrió su enlace'))).toBe(true);
 
     sent.length = 0;
@@ -96,7 +96,7 @@ describe('familia entre canales', () => {
     const sent: { channel: Channel; to: string; text: string }[] = [];
     const deps: CoreDeps = { messengers: { whatsapp: fakeMessenger('whatsapp', sent) }, store: new MemoryStore(), ai: null, transcriber: null };
     await handleIncoming({ from: { channel: 'whatsapp', id: '393330000000' }, langCode: 'it', text: 'Ciao mamma, ho cambiato numero. Mi serve un bonifico urgente', forwarded: true }, deps);
-    expect(sent[0]?.text).toContain('Ciao, sono Guardiano');
+    expect(sent[0]?.text).toContain('Ciao, sono Pausa');
     expect(sent.at(-1)?.text).toContain('RISCHIO ALTO');
   });
 });

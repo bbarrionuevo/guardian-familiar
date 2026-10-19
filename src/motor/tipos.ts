@@ -2,7 +2,7 @@
 
 export type Lang = 'it' | 'es';
 
-// Nunca existe un nivel "seguro": lo máximo que el guardián dice es que no ve señales.
+// Nunca existe un nivel "seguro": lo máximo que Pausa dice es que no ve señales.
 export type Level = 'alto' | 'medio' | 'sin_senales';
 
 export const LEVEL_RANK: Record<Level, number> = { sin_senales: 0, medio: 1, alto: 2 };
@@ -11,7 +11,7 @@ export function maxLevel(a: Level, b: Level): Level {
   return LEVEL_RANK[a] >= LEVEL_RANK[b] ? a : b;
 }
 
-// Patrones de estafa que el guardián sabe explicar. El orden es la prioridad
+// Patrones de estafa que Pausa sabe explicar. El orden es la prioridad
 // cuando varias reglas coinciden: el primero es el más grave o el más claro.
 export const PATTERNS = [
   'secuestro_virtual',
