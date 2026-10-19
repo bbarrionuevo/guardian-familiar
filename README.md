@@ -90,6 +90,12 @@ El código está listo. Mientras falten estas claves, el canal queda apagado y e
    - es: `⚠️ {{1}} recibió un mensaje con riesgo alto ({{2}}). Le respondí: «{{3}}». Si puede, llame ahora a su familiar.`
    - it: `⚠️ {{1}} ha ricevuto un messaggio a rischio alto ({{2}}). Ho risposto: «{{3}}». Se puoi, chiama subito il tuo familiare.`
 
+8. **Número italiano (cuando lo tengas).** Sumalo en la misma app de Meta (*Add phone number*, con el nombre «Pausa») y cargá:
+   - los secretos `WHATSAPP_PHONE_ID_IT` (su Phone number ID) y `WHATSAPP_NUMBER_IT` (por ejemplo `393331234567`);
+   - después de probarlo, la variable `SITIO_WHATSAPP_IT` con el mismo número.
+
+   El token, el App Secret, el webhook y la plantilla son los mismos. A cada persona Pausa le contesta por el número al que escribió; los avisos a la familia y los enlaces de invitación salen por el número del país o del idioma. Las páginas en italiano muestran WhatsApp solo con el número italiano: un +54 en Italia genera desconfianza.
+
 Las respuestas a quien le escribe a Pausa no tienen costo en la tarifa actual de Meta. Pausa es un servicio concreto (revisar mensajes), que es lo que Meta permite desde 2026.
 
 ## Uso

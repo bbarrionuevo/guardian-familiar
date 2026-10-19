@@ -127,11 +127,17 @@ describe('web generada', () => {
     const home = homePage('es', site);
     expect(home).toContain('href="https://wa.me/5491178171273?text=Hola"');
     expect(home).toContain('href="/es/pausa.vcf"');
-    const fam = familyPage('it', site);
-    expect(fam).toContain('<h2>1. Salva Pausa su WhatsApp</h2>');
-    expect(fam).toContain('<h2>2. Installa l’app</h2>');
-    expect(fam).toContain('Scrivi /famiglia a Pausa');
+    const fam = familyPage('es', site);
+    expect(fam).toContain('<h2>1. Guarde a Pausa en WhatsApp</h2>');
+    expect(fam).toContain('<h2>2. Instale la app</h2>');
+    expect(fam).toContain('Escríbale /familia a Pausa');
     expect(vcard('es', site)).toContain('TEL;TYPE=CELL:+5491178171273');
+    // Sin número italiano, las páginas en italiano no muestran WhatsApp (un +54 en Italia genera
+    // desconfianza); con él, muestran el italiano.
+    expect(homePage('it', site)).not.toContain('wa.me/');
+    const both = siteConfig({ SITIO_WHATSAPP: '5491178171273', SITIO_WHATSAPP_IT: '+39 333 000 0000' });
+    expect(homePage('it', both)).toContain('href="https://wa.me/393330000000?text=Ciao"');
+    expect(homePage('es', both)).toContain('href="https://wa.me/5491178171273?text=Hola"');
   });
 
   it('el sitemap lista todas las páginas', () => {

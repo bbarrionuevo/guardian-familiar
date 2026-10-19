@@ -6,7 +6,7 @@ import { cpSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } f
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Lang } from '../src/motor/tipos';
-import { siteConfig } from '../src/web/config';
+import { siteConfig, waNumber } from '../src/web/config';
 import { GUIDES } from '../src/web/guias';
 import {
   familyPage,
@@ -146,7 +146,7 @@ function main() {
     write(familyPath(lang), familyPage(lang, site));
     write(urgentPath(lang), urgentPage(lang, site));
     write(termsPath(lang), termsPage(lang, site));
-    if (site.whatsapp) write(vcardPath(lang).slice(1), vcard(lang, site));
+    if (waNumber(lang, site)) write(vcardPath(lang).slice(1), vcard(lang, site));
     write(`${lang}/manifest.webmanifest`, manifest(lang));
     urls.push(homePath(lang), familyPath(lang), urgentPath(lang), privacyPath(lang), termsPath(lang));
     for (const g of GUIDES) {

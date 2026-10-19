@@ -124,7 +124,7 @@ async function handleCommand(from: Address, user: UserRecord, text: string, deps
       await store.put(keys.invite(code), { childChatId: from.id, childName: user.name, channel: from.channel } satisfies Invite, INVITE_TTL);
       // Primero el enlace del canal de quien invita; si hay otro canal, también ese.
       const channels: Channel[] = [from.channel, ...(['telegram', 'whatsapp'] as Channel[]).filter((c) => c !== from.channel)];
-      const links = channels.flatMap((c) => (deps.messengers[c] ? [deps.messengers[c]!.inviteLink(code)] : []));
+      const links = channels.flatMap((c) => (deps.messengers[c] ? [deps.messengers[c]!.inviteLink(code, user.lang)] : []));
       await out.send(from.id, t.inviteForChild(links.join('\n')));
       await out.send(from.id, t.inviteToForward(links.join('\n')));
       return;

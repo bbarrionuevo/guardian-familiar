@@ -4,7 +4,7 @@
 import { URGENT, URGENT_TEXT, type Country } from '../bot/urgente';
 import { patternLabel } from '../motor/respuestas';
 import type { Lang, Level, Pattern } from '../motor/tipos';
-import type { SiteConfig } from './config';
+import { waNumber, type SiteConfig } from './config';
 import { GUIDES, type Guide } from './guias';
 import { WEB } from './textos-web';
 
@@ -90,7 +90,7 @@ ${o.body}
     <p>${esc(t.footerNote)}</p>
     <p><a href="${urgentPath(o.lang)}">${esc(t.urgent.link)}</a></p>
     <p><a href="${privacyPath(o.lang)}">${t.privacyLink}</a> · <a href="${termsPath(o.lang)}">${TERMS[o.lang].title}</a>${
-      site.whatsapp ? ` · <a href="${whatsappChatUrl(o.lang, site)}">WhatsApp</a>` : ''
+      waNumber(o.lang, site) ? ` · <a href="${whatsappChatUrl(o.lang, site)}">WhatsApp</a>` : ''
     } · <a href="https://t.me/${site.botUsername}">Telegram</a></p>
   </div>
 </footer>
@@ -155,7 +155,7 @@ function familyForm(lang: Lang): string {
 }
 
 // Pausa en WhatsApp: abrir el chat con un saludo y guardar el contacto (vCard).
-export const whatsappChatUrl = (lang: Lang, site: SiteConfig) => `https://wa.me/${site.whatsapp}?text=${encodeURIComponent(WEB[lang].whatsapp.greeting)}`;
+export const whatsappChatUrl = (lang: Lang, site: SiteConfig) => `https://wa.me/${waNumber(lang, site)}?text=${encodeURIComponent(WEB[lang].whatsapp.greeting)}`;
 export const vcardPath = (lang: Lang) => `/${lang}/pausa.vcf`;
 
 function whatsappButtons(lang: Lang, site: SiteConfig): string {
@@ -164,7 +164,7 @@ function whatsappButtons(lang: Lang, site: SiteConfig): string {
 }
 
 export function vcard(lang: Lang, site: SiteConfig): string {
-  return ['BEGIN:VCARD', 'VERSION:3.0', 'FN:Pausa', 'ORG:Pausa', `TEL;TYPE=CELL:+${site.whatsapp}`, `URL:${site.url}/${lang}/`, `NOTE:${WEB[lang].whatsapp.vcardNote}`, 'END:VCARD', ''].join('\r\n');
+  return ['BEGIN:VCARD', 'VERSION:3.0', 'FN:Pausa', 'ORG:Pausa', `TEL;TYPE=CELL:+${waNumber(lang, site)}`, `URL:${site.url}/${lang}/`, `NOTE:${WEB[lang].whatsapp.vcardNote}`, 'END:VCARD', ''].join('\r\n');
 }
 
 export function shareFamilyUrl(lang: Lang, pattern: Pattern | null, site: SiteConfig): string {
@@ -181,7 +181,7 @@ export function homePage(lang: Lang, site: SiteConfig): string {
   const guides = GUIDES.map(
     (g) => `<li><a href="${guidePath(g, lang)}"><strong>${esc(g[lang].title)}</strong><span>${esc(g[lang].description)}</span></a></li>`,
   ).join('\n');
-  const whatsapp = site.whatsapp
+  const whatsapp = waNumber(lang, site)
     ? `<section class="card wa-card" aria-labelledby="whatsapp-h">
   <h2 id="whatsapp-h">${esc(t.whatsapp.h2)}</h2>
   <p>${esc(t.whatsapp.text)}</p>
@@ -263,15 +263,15 @@ export function familyPage(lang: Lang, site: SiteConfig): string {
     install: `<button type="button" class="install-btn" hidden>${esc(t.installButton)}</button>\n  <p class="muted">${esc(f.iphone)}</p>`,
     contact: familyForm(lang),
     test: `<p><button type="button" class="secondary" data-fill="${esc(f.testMessage)}">${esc(f.testButton)}</button></p>\n  ${checker(lang, t.navCheck, true)}`,
-    whatsapp: site.whatsapp ? whatsappButtons(lang, site) : '',
-    telegram: `<p>${site.whatsapp ? `<a class="share-wa" href="${whatsappChatUrl(lang, site)}">${esc(t.whatsapp.open)}</a> ` : ''}<a class="button-link" href="https://t.me/${site.botUsername}">${esc(t.telegramButton)}</a></p>`,
+    whatsapp: waNumber(lang, site) ? whatsappButtons(lang, site) : '',
+    telegram: `<p>${waNumber(lang, site) ? `<a class="share-wa" href="${whatsappChatUrl(lang, site)}">${esc(t.whatsapp.open)}</a> ` : ''}<a class="button-link" href="https://t.me/${site.botUsername}">${esc(t.telegramButton)}</a></p>`,
   };
   // El paso de WhatsApp, solo con número. Se numeran todos menos el del aviso automático (opcional).
   let n = 0;
   const steps = f.steps
-    .filter((s) => s.extra !== 'whatsapp' || site.whatsapp)
+    .filter((s) => s.extra !== 'whatsapp' || waNumber(lang, site))
     .map((s) => {
-      const text = s.extra === 'telegram' && site.whatsapp ? f.autoAlertWhatsapp : s.text;
+      const text = s.extra === 'telegram' && waNumber(lang, site) ? f.autoAlertWhatsapp : s.text;
       const h2 = s.extra === 'telegram' ? s.h2 : `${++n}. ${s.h2}`;
       return `<section class="card">
   <h2>${esc(h2)}</h2>

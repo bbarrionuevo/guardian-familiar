@@ -8,10 +8,14 @@ export interface SiteConfig {
   // página no muestra ese párrafo.
   responsable?: string;
   contacto?: string;
-  // Número de Pausa en WhatsApp, con código de país y sin «+» (SITIO_WHATSAPP). Sin él, la web no
-  // muestra WhatsApp: se carga recién cuando el canal está probado.
+  // Números de Pausa en WhatsApp, con código de país y sin «+»: el de las páginas en español
+  // (SITIO_WHATSAPP, argentino) y el de las páginas en italiano (SITIO_WHATSAPP_IT). Sin número, ese
+  // idioma no muestra WhatsApp: se cargan recién cuando el canal está probado.
   whatsapp?: string;
+  whatsappIt?: string;
 }
+
+export const waNumber = (lang: 'es' | 'it', site: SiteConfig) => (lang === 'it' ? site.whatsappIt : site.whatsapp);
 
 export function siteConfig(env: Record<string, string | undefined> = {}): SiteConfig {
   return {
@@ -20,5 +24,6 @@ export function siteConfig(env: Record<string, string | undefined> = {}): SiteCo
     responsable: env.SITIO_RESPONSABLE?.trim() || undefined,
     contacto: env.SITIO_CONTACTO?.trim() || undefined,
     whatsapp: env.SITIO_WHATSAPP?.replace(/\D/g, '') || undefined,
+    whatsappIt: env.SITIO_WHATSAPP_IT?.replace(/\D/g, '') || undefined,
   };
 }

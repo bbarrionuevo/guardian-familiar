@@ -14,7 +14,7 @@ import { handleIncoming, handleUpdate } from '../bot/bot';
 import { memoryCounters, type Counters } from '../bot/contadores';
 import type { Messenger } from '../bot/canal';
 import { createTelegramApi, telegramMessenger, type TgUpdate } from '../bot/telegram-api';
-import { validSignature, whatsappIncoming, whatsappMessenger } from '../bot/whatsapp';
+import { validSignature, whatsappIncoming, whatsappMessenger, type WhatsAppLine } from '../bot/whatsapp';
 import { createWorkersAiTranscriber } from '../bot/transcriptor';
 import { analyze } from '../motor/analizar';
 import { createClaudeClassifier, type AiClassifier } from '../motor/ia';
@@ -45,6 +45,9 @@ export interface Env {
   WHATSAPP_TOKEN?: string;
   WHATSAPP_PHONE_ID?: string;
   WHATSAPP_NUMBER?: string;
+  // Segundo número, italiano (opcional): las personas de Italia y los enlaces en italiano van por ahí.
+  WHATSAPP_PHONE_ID_IT?: string;
+  WHATSAPP_NUMBER_IT?: string;
   WHATSAPP_APP_SECRET?: string;
   WHATSAPP_VERIFY_TOKEN?: string;
   WHATSAPP_TEMPLATE_ALERTA?: string;
@@ -65,15 +68,24 @@ function aiFrom(env: Env, logTo: (m: string) => void = log): AiClassifier | null
     : null;
 }
 
-function whatsappFrom(env: Env): Messenger | undefined {
-  if (!env.WHATSAPP_TOKEN || !env.WHATSAPP_PHONE_ID || !env.WHATSAPP_NUMBER) return undefined;
+function whatsappLines(env: Env): WhatsAppLine[] {
+  const lines: WhatsAppLine[] = [];
+  if (env.WHATSAPP_PHONE_ID && env.WHATSAPP_NUMBER) lines.push({ phoneNumberId: env.WHATSAPP_PHONE_ID, number: env.WHATSAPP_NUMBER, lang: 'es' });
+  if (env.WHATSAPP_PHONE_ID_IT && env.WHATSAPP_NUMBER_IT) lines.push({ phoneNumberId: env.WHATSAPP_PHONE_ID_IT, number: env.WHATSAPP_NUMBER_IT, lang: 'it' });
+  return lines;
+}
+
+// replyVia: por qué número de Pausa escribió cada persona en este pedido, para contestarle por ese.
+function whatsappFrom(env: Env, replyVia?: Map<string, string>): Messenger | undefined {
+  const lines = whatsappLines(env);
+  if (!env.WHATSAPP_TOKEN || !lines.length) return undefined;
   return whatsappMessenger(
     {
       token: env.WHATSAPP_TOKEN,
-      phoneNumberId: env.WHATSAPP_PHONE_ID,
-      number: env.WHATSAPP_NUMBER,
+      lines,
       apiVersion: env.WHATSAPP_API_VERSION,
       alertTemplate: env.WHATSAPP_TEMPLATE_ALERTA,
+      replyVia,
     },
     fetch,
     log,
@@ -144,8 +156,9 @@ export default {
         return new Response('forbidden', { status: 403 });
       }
       const messages = whatsappIncoming(JSON.parse(raw));
+      const replyVia = new Map(messages.flatMap((m) => (m.via ? [[m.from.id, m.via] as [string, string]] : [])));
       const deps = {
-        messengers: { whatsapp, telegram: env.BOT_TOKEN ? telegramMessenger(createTelegramApi(env.BOT_TOKEN), env.BOT_USERNAME) : undefined },
+        messengers: { whatsapp: whatsappFrom(env, replyVia), telegram: env.BOT_TOKEN ? telegramMessenger(createTelegramApi(env.BOT_TOKEN), env.BOT_USERNAME) : undefined },
         store: new KvStore(env.GUARDIAN_KV),
         counters: countersFrom(env),
         ai: aiFrom(env),

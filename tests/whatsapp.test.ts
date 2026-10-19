@@ -8,8 +8,8 @@ import worker, { type Env } from '../src/servidor/worker';
 
 const SCAM = 'Hola ma, se me rompió el celu, este es mi número nuevo. Necesito que me transfieras hoy, es urgente';
 
-function payload(messages: unknown[], contacts: unknown[] = []) {
-  return { object: 'whatsapp_business_account', entry: [{ changes: [{ field: 'messages', value: { messages, contacts } }] }] };
+function payload(messages: unknown[], contacts: unknown[] = [], phoneNumberId = 'ar-id') {
+  return { object: 'whatsapp_business_account', entry: [{ changes: [{ field: 'messages', value: { metadata: { phone_number_id: phoneNumberId }, messages, contacts } }] }] };
 }
 
 async function sign(body: string, secret: string) {
@@ -50,9 +50,30 @@ describe('mensajes de WhatsApp', () => {
     expect(list.map((m) => m.messageId)).toEqual(['v']);
   });
 
+  it('con dos números contesta por el que le escribieron y avisa por el del país', async () => {
+    const fetchFn = vi.fn().mockResolvedValue(new Response('{}'));
+    const lines = [
+      { phoneNumberId: 'ar-id', number: '5491178171273', lang: 'es' as const },
+      { phoneNumberId: 'it-id', number: '393330000000', lang: 'it' as const },
+    ];
+    const incoming = whatsappIncoming(payload([{ from: '34600000000', id: 'm', type: 'text', text: { body: 'hola' } }], [], 'it-id'));
+    expect(incoming[0]?.via).toBe('it-id');
+    const m = whatsappMessenger({ token: 't', lines, replyVia: new Map([['34600000000', 'it-id']]) }, fetchFn as unknown as typeof fetch);
+    await m.send('34600000000', 'respuesta');
+    await m.send('393331112222', 'aviso a un hijo en Italia');
+    await m.send('5491122223333', 'aviso a un hijo en Argentina');
+    expect(fetchFn.mock.calls.map((c) => c[0])).toEqual([
+      'https://graph.facebook.com/v23.0/it-id/messages',
+      'https://graph.facebook.com/v23.0/it-id/messages',
+      'https://graph.facebook.com/v23.0/ar-id/messages',
+    ]);
+    expect(m.inviteLink('abc', 'it')).toBe('https://wa.me/393330000000?text=fam_abc');
+    expect(m.inviteLink('abc', 'es')).toBe('https://wa.me/5491178171273?text=fam_abc');
+  });
+
   it('marca el mensaje como leído y muestra «escribiendo…»', async () => {
     const fetchFn = vi.fn().mockResolvedValue(new Response('{}'));
-    const m = whatsappMessenger({ token: 't', phoneNumberId: 'p', number: '549' }, fetchFn as unknown as typeof fetch);
+    const m = whatsappMessenger({ token: 't', lines: [{ phoneNumberId: 'p', number: '549', lang: 'es' }] }, fetchFn as unknown as typeof fetch);
     await m.typing('549110', 'wamid.1');
     expect(JSON.parse(fetchFn.mock.calls[0]![1].body)).toEqual({ messaging_product: 'whatsapp', status: 'read', message_id: 'wamid.1', typing_indicator: { type: 'text' } });
     await m.typing('549110');
@@ -68,7 +89,7 @@ describe('mensajes de WhatsApp', () => {
 
   it('manda el aviso a la familia con la plantilla y, si falla, como texto', async () => {
     const fetchFn = vi.fn().mockResolvedValueOnce(new Response('', { status: 400 })).mockResolvedValue(new Response('{}'));
-    const m = whatsappMessenger({ token: 't', phoneNumberId: 'p', number: '+39 333 000', alertTemplate: 'alerta_familia' }, fetchFn as unknown as typeof fetch);
+    const m = whatsappMessenger({ token: 't', lines: [{ phoneNumberId: 'p', number: '+39 333 000', lang: 'es' }], alertTemplate: 'alerta_familia' }, fetchFn as unknown as typeof fetch);
     const alert: FamilyAlert = { who: 'Rosa', label: 'falso familiar', action: 'No transfiera nada.', text: 'texto', lang: 'es' };
     expect(await m.sendAlert!('549', alert)).toBe(true);
     const first = JSON.parse(fetchFn.mock.calls[0]![1].body);

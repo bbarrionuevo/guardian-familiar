@@ -3,17 +3,28 @@
 //   POST /whatsapp/webhook → mensajes, firmados con X-Hub-Signature-256 (secreto de la app)
 // Las respuestas dentro de las 24 h del último mensaje de la persona son texto libre. El aviso a
 // un familiar que no escribió hace poco necesita una plantilla aprobada por Meta.
+// Pausa puede tener dos números: el argentino (español) y el italiano. A cada persona se le contesta
+// por el número al que escribió; a quien no escribió, por el de su país.
 
+import type { Lang } from '../motor/tipos';
 import type { Incoming, Messenger } from './canal';
+
+export interface WhatsAppLine {
+  phoneNumberId: string;
+  // Número sin «+» ni espacios, para los enlaces wa.me.
+  number: string;
+  lang: Lang;
+}
 
 export interface WhatsAppConfig {
   token: string;
-  phoneNumberId: string;
-  // Número del bot sin «+» ni espacios, para el enlace wa.me de las invitaciones.
-  number: string;
+  // El primero es el de siempre: se usa cuando no hay uno del idioma de la persona.
+  lines: WhatsAppLine[];
   apiVersion?: string;
   // Nombre de la plantilla aprobada para el aviso a la familia (opcional).
   alertTemplate?: string;
+  // Por qué número escribió cada persona en este pedido (de Incoming.via).
+  replyVia?: Map<string, string>;
 }
 
 interface WaMessage {
@@ -28,7 +39,11 @@ interface WaMessage {
 }
 
 interface WaWebhook {
-  entry?: { changes?: { value?: { messages?: WaMessage[]; contacts?: { wa_id: string; profile?: { name?: string } }[] } }[] }[];
+  entry?: {
+    changes?: {
+      value?: { metadata?: { phone_number_id?: string }; messages?: WaMessage[]; contacts?: { wa_id: string; profile?: { name?: string } }[] };
+    }[];
+  }[];
 }
 
 // Reacciones con emoji, stickers y avisos del sistema (cambio de número): no son mensajes para
@@ -53,6 +68,7 @@ export function whatsappIncoming(body: unknown): Incoming[] {
           text: m.text?.body ?? m.image?.caption ?? m.document?.caption ?? '',
           forwarded: Boolean(m.context?.forwarded || m.context?.frequently_forwarded),
           messageId: m.id,
+          via: value?.metadata?.phone_number_id,
         };
         if (m.image) incoming.image = { id: m.image.id, mimeType: m.image.mime_type?.split(';')[0] };
         else if (m.document?.mime_type?.startsWith('image/')) incoming.image = { id: m.document.id, mimeType: m.document.mime_type };
@@ -82,9 +98,13 @@ type FetchFn = typeof fetch;
 export function whatsappMessenger(cfg: WhatsAppConfig, fetchFn: FetchFn = fetch, log: (m: string) => void = () => {}): Messenger {
   const base = `https://graph.facebook.com/${cfg.apiVersion || 'v23.0'}`;
   const auth = { authorization: `Bearer ${cfg.token}` };
+  const main = cfg.lines[0]!;
+  const forLang = (lang?: Lang) => cfg.lines.find((l) => l.lang === lang) ?? main;
+  // Por el número al que escribió la persona; si no escribió en este pedido, por el de su país.
+  const lineFor = (to: string) => cfg.lines.find((l) => l.phoneNumberId === cfg.replyVia?.get(to)) ?? forLang(langFromNumber(to));
 
-  async function post(payload: Record<string, unknown>): Promise<boolean> {
-    const res = await fetchFn(`${base}/${cfg.phoneNumberId}/messages`, {
+  async function post(line: WhatsAppLine, payload: Record<string, unknown>): Promise<boolean> {
+    const res = await fetchFn(`${base}/${line.phoneNumberId}/messages`, {
       method: 'POST',
       headers: { ...auth, 'content-type': 'application/json' },
       body: JSON.stringify({ messaging_product: 'whatsapp', ...payload }),
@@ -93,15 +113,15 @@ export function whatsappMessenger(cfg: WhatsAppConfig, fetchFn: FetchFn = fetch,
     return res.ok;
   }
 
-  const sendText = (to: string, text: string) => post({ to, type: 'text', text: { body: text, preview_url: false } });
+  const sendText = (to: string, text: string) => post(lineFor(to), { to, type: 'text', text: { body: text, preview_url: false } });
 
   return {
     send: sendText,
     // Marca el mensaje como leído (tilde azul) y muestra «escribiendo…» hasta la respuesta. Si la
     // API no lo acepta, se sigue igual.
-    async typing(_to, messageId) {
+    async typing(to, messageId) {
       if (!messageId) return;
-      await post({ status: 'read', message_id: messageId, typing_indicator: { type: 'text' } }).catch(() => false);
+      await post(lineFor(to), { status: 'read', message_id: messageId, typing_indicator: { type: 'text' } }).catch(() => false);
     },
     async download(ref, maxBytes) {
       const meta = await fetchFn(`${base}/${ref.id}`, { headers: auth });
@@ -113,10 +133,10 @@ export function whatsappMessenger(cfg: WhatsAppConfig, fetchFn: FetchFn = fetch,
       const bytes = new Uint8Array(await file.arrayBuffer());
       return bytes.byteLength > maxBytes ? null : bytes;
     },
-    inviteLink: (code) => `https://wa.me/${cfg.number.replace(/\D/g, '')}?text=fam_${code}`,
+    inviteLink: (code, lang) => `https://wa.me/${forLang(lang).number.replace(/\D/g, '')}?text=fam_${code}`,
     async sendAlert(to, alert) {
       if (!cfg.alertTemplate) return sendText(to, alert.text);
-      const ok = await post({
+      const ok = await post(lineFor(to), {
         to,
         type: 'template',
         template: {

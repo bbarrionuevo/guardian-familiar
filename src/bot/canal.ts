@@ -27,6 +27,8 @@ export interface Incoming {
   forwarded: boolean;
   // Id del mensaje en el canal (WhatsApp lo usa para marcarlo como leído mientras se revisa).
   messageId?: string;
+  // Número de Pausa por el que llegó (WhatsApp puede tener uno argentino y uno italiano).
+  via?: string;
 }
 
 export interface FamilyAlert {
@@ -42,8 +44,8 @@ export interface Messenger {
   // «Escribiendo…» mientras se revisa. messageId es el mensaje que se está revisando.
   typing(to: string, messageId?: string): Promise<void>;
   download(ref: MediaRef, maxBytes: number): Promise<Uint8Array | null>;
-  // Enlace que abre el bot en este canal con el código de invitación.
-  inviteLink(code: string): string;
+  // Enlace que abre el bot en este canal con el código de invitación, en el número del idioma.
+  inviteLink(code: string, lang?: 'es' | 'it'): string;
   // Aviso a la familia. WhatsApp lo manda con una plantilla aprobada; si falta, como texto.
   sendAlert?(to: string, alert: FamilyAlert): Promise<boolean>;
 }

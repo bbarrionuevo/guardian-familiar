@@ -49,6 +49,7 @@ jobs:
           SITIO_CONTACTO: ${{ vars.SITIO_CONTACTO || secrets.SITIO_CONTACTO }}
           # Número de Pausa en WhatsApp para la web. Se carga recién cuando el canal está probado.
           SITIO_WHATSAPP: ${{ vars.SITIO_WHATSAPP || secrets.SITIO_WHATSAPP }}
+          SITIO_WHATSAPP_IT: ${{ vars.SITIO_WHATSAPP_IT || secrets.SITIO_WHATSAPP_IT }}
       - name: Completar la configuración
         env:
           KV_ID: ${{ secrets.KV_ID }}
@@ -81,13 +82,16 @@ jobs:
           WHATSAPP_TOKEN: ${{ secrets.WHATSAPP_TOKEN }}
           WHATSAPP_PHONE_ID: ${{ secrets.WHATSAPP_PHONE_ID }}
           WHATSAPP_NUMBER: ${{ secrets.WHATSAPP_NUMBER }}
+          WHATSAPP_PHONE_ID_IT: ${{ secrets.WHATSAPP_PHONE_ID_IT }}
+          WHATSAPP_NUMBER_IT: ${{ secrets.WHATSAPP_NUMBER_IT }}
           WHATSAPP_APP_SECRET: ${{ secrets.WHATSAPP_APP_SECRET }}
           WHATSAPP_VERIFY_TOKEN: ${{ secrets.WHATSAPP_VERIFY_TOKEN }}
           WHATSAPP_TEMPLATE_ALERTA: ${{ secrets.WHATSAPP_TEMPLATE_ALERTA }}
         run: |
           node -e '
             const keys = ["BOT_TOKEN", "TELEGRAM_SECRET", "ANTHROPIC_API_KEY", "ANTHROPIC_WORKSPACE_ID", "METRICAS_CLAVE",
-              "WHATSAPP_TOKEN", "WHATSAPP_PHONE_ID", "WHATSAPP_NUMBER", "WHATSAPP_APP_SECRET", "WHATSAPP_VERIFY_TOKEN", "WHATSAPP_TEMPLATE_ALERTA"];
+              "WHATSAPP_TOKEN", "WHATSAPP_PHONE_ID", "WHATSAPP_NUMBER", "WHATSAPP_PHONE_ID_IT", "WHATSAPP_NUMBER_IT",
+              "WHATSAPP_APP_SECRET", "WHATSAPP_VERIFY_TOKEN", "WHATSAPP_TEMPLATE_ALERTA"];
             const out = Object.fromEntries(keys.filter((k) => process.env[k]).map((k) => [k, process.env[k]]));
             require("fs").writeFileSync("/tmp/secretos.json", JSON.stringify(out));
           '
