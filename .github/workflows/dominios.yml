@@ -1,0 +1,27 @@
+# Consulta si unos dominios están libres (para elegir el nombre). Manual.
+name: Comprobar dominios
+
+on:
+  workflow_dispatch:
+    inputs:
+      dominios:
+        description: Dominios separados por espacios
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  comprobar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: sudo apt-get install -y whois >/dev/null
+      - name: Consultar
+        env:
+          DOMINIOS: ${{ inputs.dominios }}
+        run: node scripts/dominios.mjs $DOMINIOS | tee -a "$GITHUB_STEP_SUMMARY"
