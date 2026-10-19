@@ -4,7 +4,8 @@ import { join } from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
 import worker, { type Env } from '../src/servidor/worker';
 import { GUIDES } from '../src/web/guias';
-import { guidePath } from '../src/web/plantilla';
+import { siteConfig } from '../src/web/config';
+import { guidePath, privacyPage } from '../src/web/plantilla';
 import { fakeCounters } from './ayuda';
 
 const ROOT = join(import.meta.dirname, '..');
@@ -105,6 +106,16 @@ describe('web generada', () => {
     for (const g of GUIDES) expect(read(guidePath(g, 'es').slice(1))).toContain('href="/es/me-estafaron/"');
     expect(read('es/')).toContain('class="urgent-link" hidden');
     expect(read('sitemap.xml')).toContain('/it/truffa-cosa-fare/');
+  });
+
+  it('condiciones de uso y privacidad, con el responsable solo si está configurado', () => {
+    expect(read('es/condiciones/')).toContain('no una garantía');
+    expect(read('it/')).toContain('href="/it/condizioni/"');
+    expect(read('es/privacidad/')).toContain('como máximo 30 días');
+    expect(read('es/privacidad/')).not.toContain('Responsable de los datos');
+    const html = privacyPage('it', siteConfig({ SITIO_RESPONSABLE: 'Pausa', SITIO_CONTACTO: 'ayuda@example.org' }));
+    expect(html).toContain('Titolare del trattamento: Pausa');
+    expect(html).toContain('href="mailto:ayuda@example.org"');
   });
 
   it('el sitemap lista todas las páginas', () => {

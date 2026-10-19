@@ -17,6 +17,7 @@ export const guidePath = (g: Guide, lang: Lang) => `${guidesBase(lang)}${g[lang]
 export const privacyPath = (lang: Lang) => (lang === 'es' ? '/es/privacidad/' : '/it/privacy/');
 export const familyPath = (lang: Lang) => (lang === 'es' ? '/es/familia/' : '/it/famiglia/');
 export const urgentPath = (lang: Lang) => (lang === 'es' ? '/es/me-estafaron/' : '/it/truffa-cosa-fare/');
+export const termsPath = (lang: Lang) => (lang === 'es' ? '/es/condiciones/' : '/it/condizioni/');
 
 export interface Example {
   text: string;
@@ -88,7 +89,7 @@ ${o.body}
   <div class="wrap">
     <p>${esc(t.footerNote)}</p>
     <p><a href="${urgentPath(o.lang)}">${esc(t.urgent.link)}</a></p>
-    <p><a href="${privacyPath(o.lang)}">${t.privacyLink}</a> · <a href="https://t.me/${site.botUsername}">Telegram</a></p>
+    <p><a href="${privacyPath(o.lang)}">${t.privacyLink}</a> · <a href="${termsPath(o.lang)}">${TERMS[o.lang].title}</a> · <a href="https://t.me/${site.botUsername}">Telegram</a></p>
   </div>
 </footer>
 </body>
@@ -297,8 +298,9 @@ const PRIVACY: Record<Lang, { title: string; description: string; paragraphs: st
     description: 'Qué hace Pausa con los mensajes que revisa: no los guarda, los analiza y los descarta.',
     paragraphs: [
       'Pausa revisa los mensajes que usted pega, sube o comparte para decirle si tienen señales de estafa. No los guarda: se analizan en el momento y se descartan.',
-      'Para revisarlos usamos reglas propias y, cuando hace falta, la inteligencia artificial de Anthropic (Claude). El texto o la imagen se envían a Anthropic solo para esa revisión. Según sus condiciones para empresas, Anthropic no usa estos datos para entrenar su IA.',
-      'La web y el bot funcionan sobre Cloudflare. Para evitar abusos contamos cuántas revisiones se hacen por día desde cada conexión; ese contador se borra cada noche. También guardamos totales por día (cuántas revisiones y de qué nivel), sin el contenido.',
+      'Para revisarlos usamos reglas propias y, cuando hace falta, la inteligencia artificial de Anthropic (Claude). El texto o la imagen se envían a Anthropic solo para esa revisión. Según sus condiciones, Anthropic no usa estos datos para entrenar su IA y los conserva como máximo 30 días, salvo que sus controles de seguridad detecten un uso indebido.',
+      'La web y el bot funcionan sobre Cloudflare. Para evitar abusos contamos cuántas revisiones se hacen por día desde cada conexión; ese contador se borra cada noche. También guardamos totales por día (cuántas revisiones y de qué nivel), sin el contenido. Los audios que se mandan al bot los pasa a texto la IA de Cloudflare.',
+      'Si guarda en la app el contacto de un familiar, ese nombre y ese número quedan solo en su teléfono: no nos llegan.',
       'En el bot guardamos solo su idioma, su nombre (en WhatsApp, también su número) y, si usted lo pide, con qué familiar está vinculado. Con /desvincular se borran los vínculos y con /borrar, todos sus datos. Si no usa Pausa durante 13 meses, sus datos se borran solos.',
       'No usamos cookies de publicidad ni de seguimiento.',
     ],
@@ -308,8 +310,9 @@ const PRIVACY: Record<Lang, { title: string; description: string; paragraphs: st
     description: 'Cosa fa Pausa con i messaggi che controlla: non li conserva, li analizza e li scarta.',
     paragraphs: [
       'Pausa controlla i messaggi che incolli, carichi o condividi per dirti se hanno segnali di truffa. Non li conserva: vengono analizzati al momento e poi scartati.',
-      'Per controllarli usiamo regole nostre e, quando serve, l’intelligenza artificiale di Anthropic (Claude). Il testo o l’immagine vengono inviati ad Anthropic solo per quel controllo. Secondo le sue condizioni per le aziende, Anthropic non usa questi dati per addestrare la sua IA.',
-      'Il sito e il bot funzionano su Cloudflare. Per evitare abusi contiamo quanti controlli arrivano ogni giorno da ciascuna connessione; il contatore si cancella ogni notte. Conserviamo anche i totali giornalieri (quanti controlli e di che livello), senza il contenuto.',
+      'Per controllarli usiamo regole nostre e, quando serve, l’intelligenza artificiale di Anthropic (Claude). Il testo o l’immagine vengono inviati ad Anthropic solo per quel controllo. Secondo le sue condizioni, Anthropic non usa questi dati per addestrare la sua IA e li conserva al massimo 30 giorni, salvo che i suoi controlli di sicurezza rilevino un uso improprio.',
+      'Il sito e il bot funzionano su Cloudflare. Per evitare abusi contiamo quanti controlli arrivano ogni giorno da ciascuna connessione; il contatore si cancella ogni notte. Conserviamo anche i totali giornalieri (quanti controlli e di che livello), senza il contenuto. Gli audio mandati al bot vengono trascritti dall’IA di Cloudflare.',
+      'Se salvi nell’app il contatto di un familiare, quel nome e quel numero restano solo sul tuo telefono: a noi non arrivano.',
       'Nel bot conserviamo solo la tua lingua, il tuo nome (su WhatsApp, anche il tuo numero) e, se lo chiedi, a quale familiare sei collegato. Con /scollega si cancellano i collegamenti e con /cancella tutti i tuoi dati. Se non usi Pausa per 13 mesi, i tuoi dati si cancellano da soli.',
       'Non usiamo cookie pubblicitari né di tracciamento.',
     ],
@@ -318,8 +321,51 @@ const PRIVACY: Record<Lang, { title: string; description: string; paragraphs: st
 
 export function privacyPage(lang: Lang, site: SiteConfig): string {
   const p = PRIVACY[lang];
-  const body = `<article class="guide"><h1>${esc(p.title)}</h1>${p.paragraphs.map((x) => `<p>${esc(x)}</p>`).join('\n')}</article>`;
+  let contact = '';
+  if (site.responsable && site.contacto) {
+    const mail = `<a href="mailto:${esc(site.contacto)}">${esc(site.contacto)}</a>`;
+    contact =
+      lang === 'es'
+        ? `<p>Responsable de los datos: ${esc(site.responsable)}. Para cualquier consulta, o para pedir que borremos sus datos, escriba a ${mail}.</p>`
+        : `<p>Titolare del trattamento: ${esc(site.responsable)}. Per qualsiasi domanda, o per chiedere di cancellare i tuoi dati, scrivi a ${mail}.</p>`;
+  }
+  const body = `<article class="guide"><h1>${esc(p.title)}</h1>${p.paragraphs.map((x) => `<p>${esc(x)}</p>`).join('\n')}${contact}</article>`;
   return page({ lang, path: privacyPath(lang), title: p.title, description: p.description, body, altPath: privacyPath(lang === 'es' ? 'it' : 'es') }, site);
+}
+
+const TERMS: Record<Lang, { title: string; description: string; paragraphs: string[] }> = {
+  es: {
+    title: 'Condiciones de uso',
+    description: 'Qué es Pausa y qué no es: una orientación gratuita para reconocer estafas, no una garantía.',
+    paragraphs: [
+      'Pausa es un servicio gratuito que ayuda a reconocer mensajes con señales de estafa. Da una orientación, no una garantía: ninguna revisión, ni humana ni automática, detecta todas las estafas.',
+      '«Sin señales de estafa» quiere decir que no encontramos señales conocidas, no que el mensaje sea seguro. Ante la duda, no pague ni dé datos, y consulte a su banco por sus canales oficiales o a su familia.',
+      'Pausa no pertenece a ningún banco, empresa ni organismo público, y nunca le va a pedir datos, claves ni dinero. Si alguien se los pide en nombre de Pausa, es una estafa.',
+      'Si ya pagó o dio sus datos, siga los pasos de la página «Me estafaron», en el pie de cada página.',
+      'Use Pausa para revisar mensajes que le llegaron. Para evitar abusos hay un límite de revisiones por día.',
+      'Podemos cambiar el servicio o dejar de ofrecerlo. Si cambian estas condiciones, se actualiza la fecha de abajo.',
+      'Última actualización: 19 de octubre de 2026.',
+    ],
+  },
+  it: {
+    title: 'Condizioni d’uso',
+    description: 'Cos’è Pausa e cosa non è: un aiuto gratuito per riconoscere le truffe, non una garanzia.',
+    paragraphs: [
+      'Pausa è un servizio gratuito che aiuta a riconoscere i messaggi con segnali di truffa. Dà un orientamento, non una garanzia: nessun controllo, né umano né automatico, riconosce tutte le truffe.',
+      '«Nessun segnale di truffa» vuol dire che non abbiamo trovato segnali conosciuti, non che il messaggio sia sicuro. Nel dubbio, non pagare e non dare dati, e chiedi alla tua banca attraverso i canali ufficiali o alla tua famiglia.',
+      'Pausa non appartiene a nessuna banca, azienda o ente pubblico, e non ti chiederà mai dati, password o soldi. Se qualcuno te li chiede a nome di Pausa, è una truffa.',
+      'Se hai già pagato o dato i tuoi dati, segui i passi della pagina «Cosa fare», in fondo a ogni pagina.',
+      'Usa Pausa per controllare i messaggi che ti arrivano. Per evitare abusi c’è un limite di controlli al giorno.',
+      'Possiamo cambiare il servizio o smettere di offrirlo. Se queste condizioni cambiano, si aggiorna la data qui sotto.',
+      'Ultimo aggiornamento: 19 ottobre 2026.',
+    ],
+  },
+};
+
+export function termsPage(lang: Lang, site: SiteConfig): string {
+  const p = TERMS[lang];
+  const body = `<article class="guide"><h1>${esc(p.title)}</h1>${p.paragraphs.map((x) => `<p>${esc(x)}</p>`).join('\n')}</article>`;
+  return page({ lang, path: termsPath(lang), title: p.title, description: p.description, body, altPath: termsPath(lang === 'es' ? 'it' : 'es') }, site);
 }
 
 // Página de resultado cuando el mensaje llega por «Compartir» desde otra app.

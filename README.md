@@ -19,7 +19,9 @@ El mismo Worker sirve una web en español (`/es/`) y en italiano (`/it/`), gener
 - **Guías:** 12 estafas comunes por idioma, con ejemplos reales y sus fuentes, para que lleguen visitas desde Google.
 - **«Me estafaron»** (`/es/me-estafaron/`, `/it/truffa-cosa-fare/`): qué hacer si ya pagó o dio sus datos, por país (España, Argentina, Italia), con los números para tocar y llamar y las fuentes oficiales. Se enlaza desde cada resultado de riesgo alto, cada guía y el pie de página.
 
-Para cambiar la dirección del sitio (al comprar un dominio), se cambia `SITIO_URL` en `src/web/config.ts`. El ícono se dibuja con `node scripts/generar-iconos.mjs`.
+Para cambiar la dirección del sitio (al comprar un dominio), se cambia `SITIO_URL` en `src/web/config.ts`.
+
+**Responsable y contacto (falta, y lo pide la ley europea de datos):** en *Settings → Secrets and variables → Actions → Variables*, cargá `SITIO_RESPONSABLE` (tu nombre o el de tu empresa) y `SITIO_CONTACTO` (un email nuevo para Pausa, no el personal). Después, *Desplegar*. Mientras falten, la página de privacidad no muestra ese párrafo. El ícono se dibuja con `node scripts/generar-iconos.mjs`.
 
 ## Cómo decide
 

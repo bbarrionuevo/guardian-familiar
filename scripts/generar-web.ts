@@ -18,6 +18,8 @@ import {
   notFoundPage,
   privacyPage,
   privacyPath,
+  termsPage,
+  termsPath,
   urgentPage,
   urgentPath,
   type Example,
@@ -141,8 +143,9 @@ function main() {
     write(privacyPath(lang), privacyPage(lang, site));
     write(familyPath(lang), familyPage(lang, site));
     write(urgentPath(lang), urgentPage(lang, site));
+    write(termsPath(lang), termsPage(lang, site));
     write(`${lang}/manifest.webmanifest`, manifest(lang));
-    urls.push(homePath(lang), familyPath(lang), urgentPath(lang), privacyPath(lang));
+    urls.push(homePath(lang), familyPath(lang), urgentPath(lang), privacyPath(lang), termsPath(lang));
     for (const g of GUIDES) {
       const examples: Example[] = g[lang].examples.map((id) => {
         const row = bank.get(id);
