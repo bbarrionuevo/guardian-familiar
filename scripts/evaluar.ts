@@ -58,7 +58,7 @@ async function main() {
   const args = new Set(process.argv.slice(2));
   const useAi = !args.has('--solo-reglas') && Boolean(process.env.ANTHROPIC_API_KEY);
   const model = process.env.GUARDIAN_MODELO || DEFAULT_MODEL;
-  const ai = useAi ? createClaudeClassifier({ apiKey: process.env.ANTHROPIC_API_KEY, model, log: (m) => console.error(m) }) : null;
+  const ai = useAi ? createClaudeClassifier({ apiKey: process.env.ANTHROPIC_API_KEY, workspaceId: process.env.ANTHROPIC_WORKSPACE_ID, model, log: (m) => console.error(m) }) : null;
 
   // Una consulta de prueba antes del banco: si la IA no responde, no tiene sentido seguir.
   if (ai && !(await ai.classify({ text: 'Hola, ¿cómo estás?', lang: 'es', ruleFindings: [] }))) {

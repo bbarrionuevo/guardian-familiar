@@ -20,6 +20,7 @@ export interface Env {
   TELEGRAM_SECRET: string;
   BOT_USERNAME: string;
   ANTHROPIC_API_KEY?: string;
+  ANTHROPIC_WORKSPACE_ID?: string;
   GUARDIAN_MODELO?: string;
   // Clave para leer /api/metricas (los números de la validación).
   METRICAS_CLAVE?: string;
@@ -31,7 +32,7 @@ const WEB_DAILY_LIMIT = 20;
 const log = (m: string) => console.log(m);
 
 function aiFrom(env: Env): AiClassifier | null {
-  return env.ANTHROPIC_API_KEY ? createClaudeClassifier({ apiKey: env.ANTHROPIC_API_KEY, model: env.GUARDIAN_MODELO, log }) : null;
+  return env.ANTHROPIC_API_KEY ? createClaudeClassifier({ apiKey: env.ANTHROPIC_API_KEY, workspaceId: env.ANTHROPIC_WORKSPACE_ID, model: env.GUARDIAN_MODELO, log }) : null;
 }
 
 // Comparación en tiempo constante para la cabecera secreta.

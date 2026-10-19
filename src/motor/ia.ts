@@ -117,6 +117,8 @@ function supportsFallbacks(model: string): boolean {
 
 export interface ClaudeClassifierOptions {
   apiKey?: string;
+  // Solo para claves que no pertenecen a un workspace de la consola de Anthropic.
+  workspaceId?: string;
   model?: string;
   // Para las pruebas: un cliente falso con la misma forma.
   client?: Pick<Anthropic, 'beta'>;
@@ -126,7 +128,12 @@ export interface ClaudeClassifierOptions {
 export function createClaudeClassifier(opts: ClaudeClassifierOptions): AiClassifier {
   const model = opts.model || DEFAULT_MODEL;
   // Tiempo corto: en el Worker la revisión corre en segundo plano y tiene unos 30 segundos.
-  const client = opts.client ?? new Anthropic({ apiKey: opts.apiKey, maxRetries: 1, timeout: 20_000 });
+  const client = opts.client ?? new Anthropic({
+      apiKey: opts.apiKey,
+      maxRetries: 1,
+      timeout: 20_000,
+      defaultHeaders: opts.workspaceId ? { 'anthropic-workspace-id': opts.workspaceId } : undefined,
+    });
   const log = opts.log ?? (() => {});
 
   return {

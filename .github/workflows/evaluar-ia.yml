@@ -13,12 +13,18 @@ on:
 permissions:
   contents: read
 
+# Con «shell: bash» explícito, GitHub usa pipefail: «comando | tee» falla si falla el comando.
+defaults:
+  run:
+    shell: bash
+
 jobs:
   evaluar:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      ANTHROPIC_WORKSPACE_ID: ${{ secrets.ANTHROPIC_WORKSPACE_ID }}
       GUARDIAN_MODELO: ${{ inputs.modelo }}
     steps:
       - uses: actions/checkout@v4

@@ -9,6 +9,11 @@ on:
 permissions:
   contents: read
 
+# Con «shell: bash» explícito, GitHub usa pipefail: «comando | tee» falla si falla el comando.
+defaults:
+  run:
+    shell: bash
+
 jobs:
   controles:
     runs-on: ubuntu-latest

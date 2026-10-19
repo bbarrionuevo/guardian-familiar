@@ -32,7 +32,8 @@ Los audios se pasan a texto con Whisper de Cloudflare. No se guarda el texto, la
    | `CLOUDFLARE_API_TOKEN` | El token de Cloudflare |
    | `CLOUDFLARE_ACCOUNT_ID` | El Account ID |
    | `KV_ID` | El ID del espacio KV |
-   | `ANTHROPIC_API_KEY` | La clave de Anthropic |
+   | `ANTHROPIC_API_KEY` | La clave de Anthropic, creada dentro de un workspace |
+   | `ANTHROPIC_WORKSPACE_ID` | Opcional: el ID del workspace (`wrkspc_…`), solo si la clave no pertenece a uno |
    | `METRICAS_CLAVE` | Otra contraseña inventada, para ver las métricas |
 
 5. **Publicar.** En *Actions → Desplegar → Run workflow*. Al terminar, el bot ya responde en Telegram.

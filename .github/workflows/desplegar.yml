@@ -1,6 +1,7 @@
 # Publica el Worker en Cloudflare y conecta el bot de Telegram.
 # Necesita estos secretos: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, KV_ID, BOT_TOKEN,
-# BOT_USERNAME, TELEGRAM_SECRET, ANTHROPIC_API_KEY y METRICAS_CLAVE. WORKER_URL es opcional:
+# BOT_USERNAME, TELEGRAM_SECRET, ANTHROPIC_API_KEY y METRICAS_CLAVE. Opcionales: ANTHROPIC_WORKSPACE_ID
+# (si la clave de Anthropic no pertenece a un workspace) y WORKER_URL:
 # si falta, se usa la dirección *.workers.dev que informa Cloudflare al publicar.
 name: Desplegar
 
@@ -9,6 +10,11 @@ on:
 
 permissions:
   contents: read
+
+# Con «shell: bash» explícito, GitHub usa pipefail: «comando | tee» falla si falla el comando.
+defaults:
+  run:
+    shell: bash
 
 concurrency:
   group: desplegar
@@ -55,10 +61,11 @@ jobs:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           TELEGRAM_SECRET: ${{ secrets.TELEGRAM_SECRET }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_WORKSPACE_ID: ${{ secrets.ANTHROPIC_WORKSPACE_ID }}
           METRICAS_CLAVE: ${{ secrets.METRICAS_CLAVE }}
         run: |
           node -e '
-            const keys = ["BOT_TOKEN", "TELEGRAM_SECRET", "ANTHROPIC_API_KEY", "METRICAS_CLAVE"];
+            const keys = ["BOT_TOKEN", "TELEGRAM_SECRET", "ANTHROPIC_API_KEY", "ANTHROPIC_WORKSPACE_ID", "METRICAS_CLAVE"];
             const out = Object.fromEntries(keys.filter((k) => process.env[k]).map((k) => [k, process.env[k]]));
             require("fs").writeFileSync("/tmp/secretos.json", JSON.stringify(out));
           '
