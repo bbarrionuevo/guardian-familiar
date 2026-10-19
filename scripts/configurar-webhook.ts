@@ -1,7 +1,7 @@
 // Conecta el bot de Telegram con el Worker y carga los comandos y el perfil en los dos idiomas.
 //   BOT_TOKEN=… TELEGRAM_SECRET=… WORKER_URL=https://pausa.<cuenta>.workers.dev npx tsx scripts/configurar-webhook.ts
 
-import { PROFILE } from '../src/bot/textos';
+import { MENU, PROFILE } from '../src/bot/textos';
 import { telegramHeaderSecret } from '../src/servidor/secreto';
 
 const token = process.env.BOT_TOKEN;
@@ -45,44 +45,11 @@ await call('setWebhook', {
   drop_pending_updates: true,
 });
 
-await call('setMyCommands', {
-  commands: [
-    { command: 'familia', description: 'Conectar a un familiar' },
-    { command: 'urgente', description: 'Ya pagué o di mis datos' },
-    { command: 'ayuda', description: 'Cómo funciona' },
-    { command: 'privacidad', description: 'Qué hago con sus mensajes' },
-    { command: 'desvincular', description: 'Borrar los vínculos' },
-    { command: 'borrar', description: 'Borrar todos sus datos' },
-    { command: 'lingua', description: 'Passa all’italiano' },
-  ],
-  language_code: 'es',
-});
-
-await call('setMyCommands', {
-  commands: [
-    { command: 'famiglia', description: 'Collegare un familiare' },
-    { command: 'urgente', description: 'Ho già pagato o dato i miei dati' },
-    { command: 'aiuto', description: 'Come funziona' },
-    { command: 'privacy', description: 'Cosa faccio con i tuoi messaggi' },
-    { command: 'scollega', description: 'Cancellare i collegamenti' },
-    { command: 'cancella', description: 'Cancellare tutti i tuoi dati' },
-    { command: 'idioma', description: 'Cambiar a español' },
-  ],
-  language_code: 'it',
-});
-
-// Para el resto de los idiomas, los comandos en español.
-await call('setMyCommands', {
-  commands: [
-    { command: 'familia', description: 'Conectar a un familiar' },
-    { command: 'urgente', description: 'Ya pagué o di mis datos' },
-    { command: 'ayuda', description: 'Cómo funciona' },
-    { command: 'privacidad', description: 'Qué hago con sus mensajes' },
-    { command: 'desvincular', description: 'Borrar los vínculos' },
-    { command: 'borrar', description: 'Borrar todos sus datos' },
-    { command: 'lingua', description: 'Italiano' },
-  ],
-});
+// Menú de comandos según el idioma de la app; para los demás idiomas, en español. Quien cambia de
+// idioma con /lingua o /idioma recibe además un menú propio (src/bot/telegram-api.ts).
+await call('setMyCommands', { commands: MENU.es, language_code: 'es' });
+await call('setMyCommands', { commands: MENU.it, language_code: 'it' });
+await call('setMyCommands', { commands: MENU.es });
 
 // Perfil: en español, en italiano y, para el resto de los idiomas, en español.
 for (const [lang, scope] of [['es', { language_code: 'es' }], ['it', { language_code: 'it' }], ['es', {}]] as const) {

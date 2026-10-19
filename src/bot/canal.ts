@@ -46,6 +46,9 @@ export interface Messenger {
   download(ref: MediaRef, maxBytes: number): Promise<Uint8Array | null>;
   // Enlace que abre el bot en este canal con el código de invitación, en el número del idioma.
   inviteLink(code: string, lang?: 'es' | 'it'): string;
+  // Deja el menú del canal en el idioma de la persona. Telegram arma el menú según el idioma de la
+  // app, que puede no ser el que la persona eligió con /lingua o /idioma.
+  setLanguage?(to: string, lang: 'es' | 'it'): Promise<void>;
   // Aviso a la familia. WhatsApp lo manda con una plantilla aprobada; si falta, como texto.
   sendAlert?(to: string, alert: FamilyAlert): Promise<boolean>;
 }

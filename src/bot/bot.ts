@@ -118,6 +118,8 @@ async function handleCommand(from: Address, user: UserRecord, text: string, deps
   switch (cmd) {
     case 'start':
       await out.send(from.id, t.welcome);
+      // El menú, en el idioma guardado (puede no ser el de la app).
+      await out.setLanguage?.(from.id, user.lang).catch((err: Error) => deps.log?.(`menú: ${err.message}`));
       return;
     case 'family': {
       const code = newCode();
@@ -156,6 +158,7 @@ async function handleCommand(from: Address, user: UserRecord, text: string, deps
     case 'lang_it': {
       user.lang = cmd === 'lang_it' ? 'it' : 'es';
       await saveUser(deps, from, user);
+      await out.setLanguage?.(from.id, user.lang).catch((err: Error) => deps.log?.(`menú: ${err.message}`));
       await out.send(from.id, TEXTS[user.lang].langSet);
       return;
     }

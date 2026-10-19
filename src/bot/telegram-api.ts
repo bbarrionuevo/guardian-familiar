@@ -1,6 +1,7 @@
 // Cliente mínimo de la API de bots de Telegram, con fetch (funciona en Workers y en Node).
 
 import type { Incoming, Messenger } from './canal';
+import { MENU } from './textos';
 
 export interface TgUser {
   id: number;
@@ -39,6 +40,8 @@ export interface TelegramApi {
   sendTyping(chatId: number): Promise<void>;
   // Descarga un archivo; null si no se pudo o pesa más que el límite.
   downloadFile(fileId: string, maxBytes: number): Promise<Uint8Array | null>;
+  // Menú de comandos solo para ese chat (tiene prioridad sobre el del idioma de la app).
+  setChatCommands?(chatId: number, commands: { command: string; description: string }[]): Promise<void>;
 }
 
 type FetchFn = typeof fetch;
@@ -64,6 +67,9 @@ export function createTelegramApi(token: string, fetchFn: FetchFn = fetch): Tele
     },
     async sendTyping(chatId) {
       await call('sendChatAction', { chat_id: chatId, action: 'typing' });
+    },
+    async setChatCommands(chatId, commands) {
+      await call('setMyCommands', { commands, scope: { type: 'chat', chat_id: chatId } });
     },
     async downloadFile(fileId, maxBytes) {
       const file = await call('getFile', { file_id: fileId });
@@ -114,6 +120,9 @@ export function telegramMessenger(api: TelegramApi, botUsername: string): Messen
     send: (to, text) => api.sendMessage(Number(to), text),
     typing: (to) => api.sendTyping(Number(to)),
     download: (ref, maxBytes) => api.downloadFile(ref.id, maxBytes),
+    setLanguage: async (to, lang) => {
+      await api.setChatCommands?.(Number(to), MENU[lang]);
+    },
     // El usuario del bot puede venir escrito con @; en el enlace va sin.
     inviteLink: (code) => `https://t.me/${botUsername.replace(/^@/, '')}?start=fam_${code}`,
   };

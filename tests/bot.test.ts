@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { keys, MemoryStore, type UserRecord } from '../src/bot/almacen';
 import { handleUpdate, type BotDeps } from '../src/bot/bot';
 import { createCounters, MemoryCounterStorage, memoryCounters } from '../src/bot/contadores';
-import { PROFILE, TEXTS } from '../src/bot/textos';
+import { COMMANDS, MENU, PROFILE, TEXTS } from '../src/bot/textos';
 import type { TelegramApi, TgMessage } from '../src/bot/telegram-api';
 
 interface Sent {
@@ -12,6 +12,7 @@ interface Sent {
 
 function setup(over: Partial<BotDeps> = {}) {
   const sent: Sent[] = [];
+  const menus: { chatId: number; commands: string[] }[] = [];
   const files = new Map<string, Uint8Array>();
   const api: TelegramApi = {
     async sendMessage(chatId, text) {
@@ -19,6 +20,9 @@ function setup(over: Partial<BotDeps> = {}) {
       return true;
     },
     async sendTyping() {},
+    async setChatCommands(chatId, commands) {
+      menus.push({ chatId, commands: commands.map((c) => c.command) });
+    },
     async downloadFile(fileId, maxBytes) {
       const f = files.get(fileId);
       return f && f.byteLength <= maxBytes ? f : null;
@@ -42,7 +46,7 @@ function setup(over: Partial<BotDeps> = {}) {
       { update_id: id++, message: { message_id: id, chat: { id: chatId, type: 'private' }, from: { id: chatId, first_name: name, language_code: lang }, ...msg } },
       deps,
     );
-  return { sent, store, counterStorage, files, send, deps };
+  return { sent, menus, store, counterStorage, files, send, deps };
 }
 
 const SCAM = 'Hola ma, se me rompió el celu, este es mi número nuevo. Necesito que me transfieras hoy, es urgente';
@@ -62,6 +66,39 @@ describe('bot', () => {
       expect(p.name).toBe('Pausa');
       expect(p.description.length).toBeLessThanOrEqual(512);
       expect(p.shortDescription.length).toBeLessThanOrEqual(120);
+    }
+  });
+
+  it('al cambiar de idioma cambia también el menú de ese chat, y dice cómo volver', async () => {
+    const { sent, menus, send } = setup();
+    await send(1, { text: '/lingua' }, 'es');
+    expect(menus.at(-1)).toEqual({ chatId: 1, commands: MENU.it.map((c) => c.command) });
+    expect(sent.at(-1)?.text).toContain('Para volver al español: /idioma');
+    await send(1, { text: '/aiuto' });
+    expect(sent.at(-1)?.text).toContain('Inoltrami il messaggio');
+    await send(1, { text: '/idioma' });
+    expect(menus.at(-1)).toEqual({ chatId: 1, commands: MENU.es.map((c) => c.command) });
+    expect(sent.at(-1)?.text).toContain('Listo, le hablo en español.');
+    // /start deja el menú en el idioma guardado, aunque la app esté en otro.
+    await send(1, { text: '/lingua' });
+    await send(1, { text: '/start' }, 'es');
+    expect(menus.at(-1)?.commands[0]).toBe('famiglia');
+  });
+
+  it('el menú es el mismo en los dos idiomas, sin el cambio de idioma, y la ayuda lo explica', () => {
+    expect(MENU.es.length).toBe(MENU.it.length);
+    MENU.es.forEach((c, i) => {
+      const action = COMMANDS[c.command];
+      expect(action, c.command).toBeDefined();
+      expect(COMMANDS[MENU.it[i]!.command], MENU.it[i]!.command).toBe(action);
+      expect(action).not.toMatch(/^lang_/);
+    });
+    for (const lang of ['es', 'it'] as const) {
+      for (const c of MENU[lang]) if (COMMANDS[c.command] !== 'help') expect(TEXTS[lang].help, c.command).toContain(`/${c.command}:`);
+      // Cómo cambiar de idioma: en la ayuda y en el saludo.
+      const other = lang === 'es' ? '/lingua' : '/idioma';
+      expect(TEXTS[lang].help).toContain(other);
+      expect(TEXTS[lang].welcome).toContain(other);
     }
   });
 
@@ -237,6 +274,6 @@ describe('bot', () => {
     await handleUpdate({ update_id: 9, message: { message_id: 1, chat: { id: -5, type: 'group' }, text: SCAM } }, deps);
     expect(sent).toHaveLength(0);
     await send(1, { text: '/lingua' });
-    expect(sent.at(-1)?.text).toBe('Fatto, ti parlo in italiano.');
+    expect(sent.at(-1)?.text).toContain('Fatto, ti parlo in italiano.');
   });
 });

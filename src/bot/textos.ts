@@ -45,7 +45,7 @@ export const TEXTS: Record<Lang, BotTexts> = {
       '• Los audios los pasa a texto el servicio de Cloudflare.\n' +
       '• Guardo solo su idioma, su nombre (en WhatsApp, también su número) y con quién está vinculado. Si no me usa durante un año, se borra solo.\n' +
       '• /desvincular borra los vínculos y /borrar, todos sus datos.',
-    langSet: 'Listo, le hablo en español.',
+    langSet: 'Listo, le hablo en español.\n\nPer tornare all’italiano: /lingua',
     unsupported: 'Puedo revisar texto, capturas de pantalla y audios. Reenvíeme el mensaje que le parece raro.',
     tooBig: 'El archivo es muy grande para revisarlo. Mándeme una captura de pantalla o copie el texto.',
     limit: (n) => `Hoy ya revisé ${n} mensajes suyos. Mañana sigo. Mientras tanto: no pague ni dé datos, y ante la duda consulte a un familiar.`,
@@ -84,7 +84,7 @@ export const TEXTS: Record<Lang, BotTexts> = {
       '• Gli audio vengono trascritti dal servizio di Cloudflare.\n' +
       '• Conservo solo la tua lingua, il tuo nome (su WhatsApp, anche il tuo numero) e con chi sei collegato. Se non mi usi per un anno, si cancella da solo.\n' +
       '• /scollega cancella i collegamenti e /cancella tutti i tuoi dati.',
-    langSet: 'Fatto, ti parlo in italiano.',
+    langSet: 'Fatto, ti parlo in italiano.\n\nPara volver al español: /idioma',
     unsupported: 'Posso controllare testo, screenshot e audio. Inoltrami il messaggio che ti sembra strano.',
     tooBig: 'Il file è troppo grande da controllare. Mandami uno screenshot o copia il testo.',
     limit: (n) => `Oggi ho già controllato ${n} tuoi messaggi. Continuo domani. Nel frattempo: non pagare e non dare dati, e nel dubbio chiedi a un familiare.`,
@@ -118,6 +118,28 @@ export const PROFILE: Record<Lang, { name: string; description: string; shortDes
       'Prima di rispondere o pagare, una pausa. Inoltrami il messaggio che ti sembra strano (testo, screenshot o audio) e ti dico se ha segnali di truffa e cosa fare. Se colleghi un familiare, avviso anche quella persona quando il rischio è alto. Non conservo i tuoi messaggi.',
     shortDescription: 'Inoltrami un messaggio strano e ti dico se ha segnali di truffa.',
   },
+};
+
+// Menú de comandos de Telegram, en el mismo orden en los dos idiomas. No tiene el cambio de idioma:
+// una persona mayor lo puede tocar sin querer y quedarse con todo en otro idioma. Escrito sigue
+// funcionando (/lingua, /idioma) y lo dicen el saludo y la ayuda.
+export const MENU: Record<Lang, { command: string; description: string }[]> = {
+  es: [
+    { command: 'familia', description: 'Conectar a un familiar' },
+    { command: 'urgente', description: 'Ya pagué o di mis datos' },
+    { command: 'ayuda', description: 'Cómo funciona' },
+    { command: 'privacidad', description: 'Qué hago con sus mensajes' },
+    { command: 'desvincular', description: 'Borrar los vínculos' },
+    { command: 'borrar', description: 'Borrar todos sus datos' },
+  ],
+  it: [
+    { command: 'famiglia', description: 'Collegare un familiare' },
+    { command: 'urgente', description: 'Ho già pagato o dato i miei dati' },
+    { command: 'aiuto', description: 'Come funziona' },
+    { command: 'privacy', description: 'Cosa faccio con i tuoi messaggi' },
+    { command: 'scollega', description: 'Cancellare i collegamenti' },
+    { command: 'cancella', description: 'Cancellare tutti i tuoi dati' },
+  ],
 };
 
 // Comandos en los dos idiomas.
