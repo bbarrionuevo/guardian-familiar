@@ -60,6 +60,12 @@ async function main() {
   const model = process.env.GUARDIAN_MODELO || DEFAULT_MODEL;
   const ai = useAi ? createClaudeClassifier({ apiKey: process.env.ANTHROPIC_API_KEY, model, log: (m) => console.error(m) }) : null;
 
+  // Una consulta de prueba antes del banco: si la IA no responde, no tiene sentido seguir.
+  if (ai && !(await ai.classify({ text: 'Hola, ¿cómo estás?', lang: 'es', ruleFindings: [] }))) {
+    console.error('La IA no respondió a la consulta de prueba: mirá el error de arriba.');
+    process.exit(1);
+  }
+
   const blind = args.has('--ciego');
   const bank = loadBank(blind ? join(BANCO, 'ciego') : BANCO);
   const verdicts = await mapLimit(bank, 4, ({ row }) => analyze({ text: row.text, langHint: row.lang }, { ai }));
@@ -69,6 +75,7 @@ async function main() {
 
   const count = (xs: { v: Verdict }[], level: Level) => xs.filter((x) => x.v.level === level).length;
   const missed = scams.filter((x) => x.v.level === 'sin_senales');
+  const aiFailed = bank.filter((_, i) => verdicts[i]!.notes.includes('ia_no_disponible')).length;
   const falseAlarms = legit.filter((x) => LEVEL_RANK[x.v.level] > LEVEL_RANK[x.row.max_ok ?? 'sin_senales']);
   const legitHigh = legit.filter((x) => x.v.level === 'alto');
 
@@ -121,6 +128,12 @@ async function main() {
   }));
   const name = `ultima-evaluacion${blind ? '-ciego' : ''}${useAi ? '-ia' : ''}.json`;
   writeFileSync(join(ROOT, 'informes', name), JSON.stringify(blind ? detail.map(({ hallazgos: _h, ...rest }) => rest) : detail, null, 1));
+
+  // Si fallaron consultas, los números mezclan reglas e IA y no sirven para comparar modelos.
+  if (aiFailed > 0) {
+    console.error(`\n${aiFailed} consultas a la IA fallaron: esta evaluación no vale.`);
+    process.exit(1);
+  }
 
   if (args.has('--estricto') && (missed.length > 0 || falseAlarms.length > 0)) {
     console.error(`\nEstricto: ${missed.length} estafas sin señales, ${falseAlarms.length} falsas alarmas.`);

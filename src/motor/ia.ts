@@ -143,7 +143,8 @@ export function createClaudeClassifier(opts: ClaudeClassifierOptions): AiClassif
           ...(fallback ? { betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default' as const } : {}),
         });
       } catch (err) {
-        if (err instanceof Anthropic.APIError) log(`ia: error ${err.status ?? '?'} ${err.name}`);
+        // El mensaje de error de la API describe el pedido inválido, no el texto revisado.
+        if (err instanceof Anthropic.APIError) log(`ia: error ${err.status ?? '?'} ${err.message.slice(0, 300)}`);
         else log(`ia: error ${(err as Error).name}`);
         return null;
       }
