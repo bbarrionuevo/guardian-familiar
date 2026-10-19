@@ -37,6 +37,8 @@ jobs:
       - run: npm ci
       - run: npm run build:web
         env:
+          # El usuario del bot, para los enlaces a Telegram de la web.
+          BOT_USERNAME: ${{ secrets.BOT_USERNAME }}
           # Responsable y email de contacto para la página de privacidad (variables del repositorio).
           SITIO_RESPONSABLE: ${{ vars.SITIO_RESPONSABLE }}
           SITIO_CONTACTO: ${{ vars.SITIO_CONTACTO }}
