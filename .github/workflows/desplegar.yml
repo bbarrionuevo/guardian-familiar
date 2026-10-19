@@ -36,6 +36,10 @@ jobs:
           BOT_USERNAME: ${{ secrets.BOT_USERNAME }}
         run: |
           test -n "$KV_ID" && test -n "$BOT_USERNAME"
+          # Si KV_ID trae el nombre del espacio en lugar de su ID, se busca el ID por el nombre.
+          if ! [[ "$KV_ID" =~ ^[0-9a-f]{32}$ ]]; then
+            KV_ID=$(npx wrangler kv namespace list | node scripts/id-kv.mjs "$KV_ID")
+          fi
           sed -i "s/KV_ID_PENDIENTE/${KV_ID}/; s/BOT_USERNAME_PENDIENTE/${BOT_USERNAME}/" wrangler.toml
       - name: Publicar el Worker
         id: publicar
