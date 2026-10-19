@@ -8,11 +8,12 @@ import { langFromCode } from '../motor/normalizar';
 import { familyAlertParts, renderFamilyAlert, renderVerdict } from '../motor/respuestas';
 import type { Lang } from '../motor/tipos';
 import { keys, linkAddress, sameAddress, type Invite, type Link, type Store, type UserRecord } from './almacen';
-import type { Address, Channel, Incoming, Messenger } from './canal';
+import type { Address, Channel, FamilyAlert, Incoming, Messenger } from './canal';
 import { counterKeys, type Counters } from './contadores';
 import { telegramIncoming, telegramMessenger, toBase64, type TelegramApi, type TgUpdate } from './telegram-api';
 import { COMMANDS, TEXTS } from './textos';
 import type { Transcriber } from './transcriptor';
+import { isUrgentRequest, renderUrgent, URGENT_TEXT, urgentCountries } from './urgente';
 
 export interface CoreDeps {
   messengers: Partial<Record<Channel, Messenger>>;
@@ -97,6 +98,11 @@ export async function handleIncoming(msg: Incoming, deps: CoreDeps): Promise<voi
     await handleCommand(msg.from, user, text, deps);
     return;
   }
+  // «Ya pagué», escrito por la persona (no reenviado): qué hacer ahora y aviso a la familia.
+  if (!msg.forwarded && !msg.image && !msg.audio && isUrgentRequest(text)) {
+    await handleUrgent(msg.from, user, deps);
+    return;
+  }
   // En WhatsApp no hay /start: la primera vez se saluda antes de revisar.
   if (isNew) await out.send(msg.from.id, TEXTS[user.lang].welcome);
   await checkMessage(msg, user, deps);
@@ -140,6 +146,9 @@ async function handleCommand(from: Address, user: UserRecord, text: string, deps
       await out.send(from.id, t.deleted);
       return;
     }
+    case 'urgent':
+      await handleUrgent(from, user, deps);
+      return;
     case 'privacy':
       await out.send(from.id, t.privacy);
       return;
@@ -153,6 +162,31 @@ async function handleCommand(from: Address, user: UserRecord, text: string, deps
     default:
       await out.send(from.id, t.help);
   }
+}
+
+async function handleUrgent(from: Address, user: UserRecord, deps: CoreDeps): Promise<void> {
+  let reply = renderUrgent(user.lang, urgentCountries(user.lang, from));
+  const alerts = await alertGuardians(user, deps, (lang) => {
+    const u = URGENT_TEXT[lang];
+    return { who: user.name, label: u.familyLabel, action: u.familyAction, text: u.familyText(user.name), lang };
+  });
+  if (alerts) reply += `\n\n${TEXTS[user.lang].familyNotified}`;
+  await deps.messengers[from.channel]!.send(from.id, reply);
+  await deps.counters.add(dayOf(deps.now?.() ?? new Date()), 'bot', { urgencias: 1, alertas: alerts });
+}
+
+// Avisa a cada familiar vinculado, en su idioma. Devuelve a cuántos les llegó.
+async function alertGuardians(user: UserRecord, deps: CoreDeps, make: (lang: Lang) => FamilyAlert): Promise<number> {
+  let sent = 0;
+  for (const g of user.guardians) {
+    const to = linkAddress(g);
+    const messenger = deps.messengers[to.channel];
+    if (!messenger) continue;
+    const guardian = await deps.store.get<UserRecord>(keys.user(to));
+    const alert = make(guardian?.lang ?? user.lang);
+    if (messenger.sendAlert ? await messenger.sendAlert(to.id, alert) : await messenger.send(to.id, alert.text)) sent++;
+  }
+  return sent;
 }
 
 // Saca a la persona de los registros de su familia y deja vacíos sus propios vínculos.
@@ -200,7 +234,6 @@ async function acceptInvite(from: Address, user: UserRecord, code: string, deps:
 }
 
 async function checkMessage(msg: Incoming, user: UserRecord, deps: CoreDeps): Promise<void> {
-  const { store } = deps;
   const from = msg.from;
   const out = deps.messengers[from.channel]!;
   const t = TEXTS[user.lang];
@@ -247,18 +280,12 @@ async function checkMessage(msg: Incoming, user: UserRecord, deps: CoreDeps): Pr
 
   let alerts = 0;
   if (verdict.level === 'alto') {
-    for (const g of user.guardians) {
-      const to = linkAddress(g);
-      const messenger = deps.messengers[to.channel];
-      if (!messenger) continue;
-      const guardian = await store.get<UserRecord>(keys.user(to));
-      const lang: Lang = guardian?.lang ?? user.lang;
+    alerts = await alertGuardians(user, deps, (lang) => {
       const parts = familyAlertParts(verdict, lang);
-      const alert = { who: user.name, label: parts.label, action: parts.action, text: renderFamilyAlert(verdict, user.name, lang), lang };
-      const sent = messenger.sendAlert ? await messenger.sendAlert(to.id, alert) : await messenger.send(to.id, alert.text);
-      if (sent) alerts++;
-    }
+      return { who: user.name, label: parts.label, action: parts.action, text: renderFamilyAlert(verdict, user.name, lang), lang };
+    });
     if (alerts) reply += `\n\n${t.familyNotified}`;
+    reply += `\n\n${URGENT_TEXT[user.lang].hint}`;
   }
   await out.send(from.id, reply);
 

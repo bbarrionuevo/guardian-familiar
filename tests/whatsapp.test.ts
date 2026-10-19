@@ -103,6 +103,16 @@ describe('familia entre canales', () => {
   });
 });
 
+describe('ayuda urgente por WhatsApp', () => {
+  it('por el prefijo del número muestra solo los pasos de España', async () => {
+    const sent: { channel: Channel; to: string; text: string }[] = [];
+    const deps: CoreDeps = { messengers: { whatsapp: fakeMessenger('whatsapp', sent) }, store: new MemoryStore(), counters: memoryCounters(), ai: null, transcriber: null };
+    await handleIncoming({ from: { channel: 'whatsapp', id: '34612345678' }, langCode: 'es', text: 'me estafaron', forwarded: false }, deps);
+    expect(sent.at(-1)?.text).toContain('017');
+    expect(sent.at(-1)?.text).not.toContain('911');
+  });
+});
+
 describe('webhook de WhatsApp en el Worker', () => {
   const env = {
     GUARDIAN_KV: { get: async () => null, put: async () => {}, delete: async () => {}, list: async () => ({ keys: [], list_complete: true }) },

@@ -49,6 +49,8 @@ export interface WebTexts {
   notFoundTitle: string;
   notFoundText: string;
   family: FamilyTexts;
+  // Página «ya pagué o di mis datos». Los pasos están en src/bot/urgente.ts.
+  urgent: { title: string; description: string; intro: string; sourcesH2: string; link: string };
 }
 
 // Contacto de un familiar guardado en el teléfono (solo ahí: no se manda al servidor) y la página
@@ -140,6 +142,15 @@ export const WEB: Record<Lang, WebTexts> = {
     sharedBack: 'Revisar otro mensaje',
     notFoundTitle: 'Página no encontrada',
     notFoundText: 'Esta página no existe. Puede revisar un mensaje desde el inicio.',
+    urgent: {
+      title: 'Me estafaron: qué hacer ahora si ya pagó o dio sus datos',
+      description:
+        'Pasos para hacer ya mismo si pagó, transfirió o dio sus datos a un estafador, en España y en Argentina: banco, claves, la línea 017 de INCIBE, la denuncia y a quién llamar si está pasando ahora.',
+      intro:
+        'Si ya pagó, transfirió o le dio sus datos a alguien que resultó ser un estafador, actúe rápido y en este orden. Lo primero siempre es avisar al banco.',
+      sourcesH2: 'Fuentes oficiales',
+      link: '¿Ya pagó o dio sus datos? Qué hacer ahora',
+    },
     family: {
       nav: 'Para la familia',
       cardH2: '¿Es para su mamá o su papá?',
@@ -274,6 +285,15 @@ export const WEB: Record<Lang, WebTexts> = {
     sharedBack: 'Controlla un altro messaggio',
     notFoundTitle: 'Pagina non trovata',
     notFoundText: 'Questa pagina non esiste. Puoi controllare un messaggio dalla pagina iniziale.',
+    urgent: {
+      title: 'Truffa: cosa fare subito se hai già pagato o dato i tuoi dati',
+      description:
+        'Cosa fare subito se hai pagato, fatto un bonifico o dato i tuoi dati a un truffatore: banca, password, segnalazione alla Polizia Postale, denuncia e chi chiamare se sta succedendo adesso.',
+      intro:
+        'Se hai già pagato, fatto un bonifico o dato i tuoi dati a qualcuno che si è rivelato un truffatore, muoviti subito e in quest’ordine. La prima cosa è sempre avvisare la banca.',
+      sourcesH2: 'Fonti ufficiali',
+      link: 'Hai già pagato o dato i tuoi dati? Cosa fare adesso',
+    },
     family: {
       nav: 'Per la famiglia',
       cardH2: 'È per tua mamma o tuo papà?',

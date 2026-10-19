@@ -115,6 +115,7 @@
     var text = result.querySelector('.result-text');
     var share = result.querySelector('.share-wa');
     var family = result.querySelector('.family-actions');
+    var urgentLink = result.querySelector('.urgent-link');
     var fileInput = form.querySelector('.file-input');
     var fileName = form.querySelector('.file-name');
     var button = form.querySelector('button[type="submit"]');
@@ -155,6 +156,7 @@
         share.hidden = true;
       }
       if (family) updateFamily(family, level, label);
+      if (urgentLink) urgentLink.hidden = level !== 'alto';
       result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 

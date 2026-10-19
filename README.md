@@ -17,6 +17,7 @@ El mismo Worker sirve una web en español (`/es/`) y en italiano (`/it/`), gener
 - **Avisar a la familia:** cada resultado de riesgo y cada guía tienen un botón para mandar el aviso a un grupo de WhatsApp. Es la forma de que el sitio se difunda solo.
 - **Para la familia** (`/es/familia/`, `/it/famiglia/`): guía para que un hijo o una hija deje Pausa listo en el teléfono de sus padres, con una prueba y la palabra clave familiar. Ahí se guarda el nombre y el número del hijo **solo en ese teléfono** (no llega al servidor); cuando Pausa ve un riesgo, muestra botones grandes para llamarlo o escribirle por WhatsApp. Funciona sin WhatsApp Business ni costos.
 - **Guías:** 12 estafas comunes por idioma, con ejemplos reales y sus fuentes, para que lleguen visitas desde Google.
+- **«Me estafaron»** (`/es/me-estafaron/`, `/it/truffa-cosa-fare/`): qué hacer si ya pagó o dio sus datos, por país (España, Argentina, Italia), con los números para tocar y llamar y las fuentes oficiales. Se enlaza desde cada resultado de riesgo alto, cada guía y el pie de página.
 
 Para cambiar la dirección del sitio (al comprar un dominio), se cambia `SITIO_URL` en `src/web/config.ts`. El ícono se dibuja con `node scripts/generar-iconos.mjs`.
 
@@ -91,6 +92,7 @@ Las respuestas a quien le escribe al bot no tienen costo en la tarifa actual de 
   - `/ayuda` o `/aiuto`: explica cómo usar el bot.
   - `/privacidad` o `/privacy`: dice qué se hace con los mensajes.
   - `/desvincular` o `/scollega`: borra los vínculos con la familia.
+  - `/urgente`, o escribir «ya pagué», «me estafaron», «ho pagato»: los pasos para hacer ya en su país, y aviso a la familia vinculada.
   - `/borrar` o `/cancella`: borra todos los datos de la persona. Además, quien no usa Pausa en 13 meses se borra solo.
   - `/idioma` (español) o `/lingua` (italiano): cambia el idioma.
 - **Métricas de validación:** abrí `https://pausa.briaan-b.workers.dev/api/metricas?clave=<METRICAS_CLAVE>`. Muestra, por día de las últimas dos semanas:

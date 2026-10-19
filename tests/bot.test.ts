@@ -116,6 +116,39 @@ describe('bot', () => {
     expect(sent.at(-1)?.text).toContain('es para su familiar');
   });
 
+  it('«ya pagué» responde qué hacer en España y Argentina y avisa a la familia', async () => {
+    const { sent, send, counterStorage } = setup();
+    await send(100, { text: '/familia' }, 'es', 'Lucía');
+    const code = /start=fam_([A-Za-z0-9]+)/.exec(sent.at(-1)!.text)![1];
+    await send(1, { text: `/start fam_${code}` }, 'es', 'Rosa');
+    sent.length = 0;
+    await send(1, { text: 'Ya pagué 😢' });
+    const reply = sent.find((s) => s.chatId === 1)!.text;
+    expect(reply).toContain('Si ya pagó o dio sus datos');
+    expect(reply).toContain('017');
+    expect(reply).toContain('911');
+    expect(reply).toContain('Le avisé a su familiar');
+    expect(sent.find((s) => s.chatId === 100)?.text).toContain('Rosa me escribió que ya pagó o dio sus datos');
+    expect(counterStorage.data.get('st:bot:2026-10-18')).toMatchObject({ urgencias: 1, alertas: 1 });
+  });
+
+  it('en italiano, solo los pasos de Italia; y no se confunde con una negación ni con un reenvío', async () => {
+    const { sent, send } = setup();
+    await send(1, { text: 'ho già fatto il bonifico' }, 'it');
+    expect(sent.at(-1)?.text).toContain('commissariatodips.it');
+    expect(sent.at(-1)?.text).not.toContain('017');
+    await send(2, { text: 'No le di mis datos, ¿está bien?' });
+    expect(sent.at(-1)?.text).not.toContain('Si ya pagó');
+    await send(2, { text: 'Ya pagué la multa, gracias', forward_origin: { type: 'hidden_user' } });
+    expect(sent.at(-1)?.text).not.toContain('Si ya pagó');
+  });
+
+  it('con riesgo alto, recuerda que puede escribir «ya pagué»', async () => {
+    const { sent, send } = setup();
+    await send(1, { text: SCAM });
+    expect(sent.at(-1)?.text).toContain('Escríbame «ya pagué»');
+  });
+
   it('respeta el límite diario', async () => {
     const { sent, send } = setup({ dailyLimit: 2 });
     await send(1, { text: 'hola' });

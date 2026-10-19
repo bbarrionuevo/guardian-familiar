@@ -93,6 +93,20 @@ describe('web generada', () => {
     expect(html).toContain('class="family-setup" hidden');
   });
 
+  it('la página «ya pagué» tiene los pasos de cada país con sus fuentes oficiales y se enlaza desde todas', () => {
+    const es = read('es/me-estafaron/');
+    for (const x of ['017', '900 116 117', '062', '911', 'denunciasufeci@mpf.gov.ar', 'https://www.incibe.es/', 'https://www.mpf.gob.ar/ufeci/']) expect(es).toContain(x);
+    const it = read('it/truffa-cosa-fare/');
+    for (const x of ['href="tel:113"', 'commissariatodips.it', 'https://www.commissariatodips.it/']) expect(it).toContain(x);
+    expect(it).not.toContain('017');
+    // Los números se tocan para llamar.
+    for (const x of ['href="tel:017"', 'href="tel:062"', 'href="tel:911"', 'href="tel:+541150710040"']) expect(es).toContain(x);
+    expect(it).toContain('href="tel:112"');
+    for (const g of GUIDES) expect(read(guidePath(g, 'es').slice(1))).toContain('href="/es/me-estafaron/"');
+    expect(read('es/')).toContain('class="urgent-link" hidden');
+    expect(read('sitemap.xml')).toContain('/it/truffa-cosa-fare/');
+  });
+
   it('el sitemap lista todas las páginas', () => {
     const sitemap = read('sitemap.xml');
     for (const g of GUIDES) {
@@ -132,6 +146,7 @@ describe('rutas web del Worker', () => {
     expect(html).toContain('https://wa.me/?text=');
     expect(html).toContain('noindex');
     expect(html).toContain('class="family-actions" hidden data-level="alto" data-label="falso familiar con número nuevo"');
+    expect(html).toContain('<p class="urgent-link"><a href="/es/me-estafaron/">');
     const day = new Date().toISOString().slice(0, 10);
     expect(counters.storage.data.get(`st:web:${day}`)).toMatchObject({ revisiones: 1, alto: 1, desde_compartir: 1 });
     // El texto revisado no queda guardado: ni en KV ni en los contadores.

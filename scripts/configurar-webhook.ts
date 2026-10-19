@@ -48,6 +48,7 @@ await call('setWebhook', {
 await call('setMyCommands', {
   commands: [
     { command: 'familia', description: 'Conectar a un familiar' },
+    { command: 'urgente', description: 'Ya pagué o di mis datos' },
     { command: 'ayuda', description: 'Cómo funciona' },
     { command: 'privacidad', description: 'Qué hago con sus mensajes' },
     { command: 'desvincular', description: 'Borrar los vínculos' },
@@ -60,6 +61,7 @@ await call('setMyCommands', {
 await call('setMyCommands', {
   commands: [
     { command: 'famiglia', description: 'Collegare un familiare' },
+    { command: 'urgente', description: 'Ho già pagato o dato i miei dati' },
     { command: 'aiuto', description: 'Come funziona' },
     { command: 'privacy', description: 'Cosa faccio con i tuoi messaggi' },
     { command: 'scollega', description: 'Cancellare i collegamenti' },
@@ -73,6 +75,7 @@ await call('setMyCommands', {
 await call('setMyCommands', {
   commands: [
     { command: 'familia', description: 'Conectar a un familiar' },
+    { command: 'urgente', description: 'Ya pagué o di mis datos' },
     { command: 'ayuda', description: 'Cómo funciona' },
     { command: 'privacidad', description: 'Qué hago con sus mensajes' },
     { command: 'desvincular', description: 'Borrar los vínculos' },

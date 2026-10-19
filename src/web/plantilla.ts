@@ -1,6 +1,7 @@
 // HTML de la web. Lo usan el generador de páginas estáticas (scripts/generar-web.ts) y el Worker
 // para la página de resultado de «Compartir». Funciones puras: no leen archivos.
 
+import { URGENT, URGENT_TEXT, type Country } from '../bot/urgente';
 import { patternLabel } from '../motor/respuestas';
 import type { Lang, Level, Pattern } from '../motor/tipos';
 import type { SiteConfig } from './config';
@@ -15,6 +16,7 @@ export const guidesBase = (lang: Lang) => (lang === 'es' ? '/es/estafas/' : '/it
 export const guidePath = (g: Guide, lang: Lang) => `${guidesBase(lang)}${g[lang].slug}/`;
 export const privacyPath = (lang: Lang) => (lang === 'es' ? '/es/privacidad/' : '/it/privacy/');
 export const familyPath = (lang: Lang) => (lang === 'es' ? '/es/familia/' : '/it/famiglia/');
+export const urgentPath = (lang: Lang) => (lang === 'es' ? '/es/me-estafaron/' : '/it/truffa-cosa-fare/');
 
 export interface Example {
   text: string;
@@ -85,6 +87,7 @@ ${o.body}
 <footer class="foot">
   <div class="wrap">
     <p>${esc(t.footerNote)}</p>
+    <p><a href="${urgentPath(o.lang)}">${esc(t.urgent.link)}</a></p>
     <p><a href="${privacyPath(o.lang)}">${t.privacyLink}</a> · <a href="https://t.me/${site.botUsername}">Telegram</a></p>
   </div>
 </footer>
@@ -114,6 +117,7 @@ export function checker(lang: Lang, heading: string, hideHeading = false): strin
     <div class="result-text"></div>
     ${familyActions(lang)}
     <a class="share-wa" hidden target="_blank" rel="noopener">${esc(t.shareFamily)}</a>
+    <p class="urgent-link" hidden><a href="${urgentPath(lang)}">${esc(t.urgent.link)}</a></p>
   </div>
 </section>`;
 }
@@ -221,6 +225,7 @@ export function guidePage(g: Guide, lang: Lang, examples: Example[], site: SiteC
   ${list(gt.whatToDo)}
   <h2>${esc(t.guideIfHappened)}</h2>
   ${list(gt.ifHappened)}
+  <p><a href="${urgentPath(lang)}">${esc(t.urgent.link)}</a></p>
 </article>
 ${checker(lang, t.guideCheckH2)}`;
   return page({ lang, path: guidePath(g, lang), title: gt.title, description: gt.description, body, altPath: guidePath(g, other) }, site);
@@ -251,6 +256,39 @@ export function familyPage(lang: Lang, site: SiteConfig): string {
 </section>
 ${steps}`;
   return page({ lang, path: familyPath(lang), title: f.title, description: f.description, body, altPath: familyPath(lang === 'es' ? 'it' : 'es') }, site);
+}
+
+// «Me estafaron»: qué hacer si ya pagó o dio sus datos, por país, con las fuentes oficiales.
+export function urgentPage(lang: Lang, site: SiteConfig): string {
+  const t = WEB[lang];
+  const u = URGENT_TEXT[lang];
+  const countries: Country[] = lang === 'it' ? ['it'] : ['es', 'ar'];
+  const sections = countries
+    .map((c) => {
+      const h = URGENT[c];
+      // Los números y direcciones se pueden tocar para llamar o escribir.
+      const linked = (text: string) =>
+        h.links.reduce((html, [label, href]) => html.replace(esc(label), `<a href="${esc(href)}">${esc(label)}</a>`), esc(text));
+      return `<section class="card">
+  <h2>${h.flag} ${esc(h.name)}</h2>
+  <ol class="steps">${h.steps.map((s) => `<li>${linked(s)}</li>`).join('')}</ol>
+  <p class="urgent-now">🚨 ${linked(h.emergency)}</p>
+</section>`;
+    })
+    .join('\n');
+  const sources = countries.flatMap((c) => URGENT[c].sources);
+  const body = `<section class="hero">
+  <h1>${esc(t.urgent.title)}</h1>
+  <p class="lead">${esc(t.urgent.intro)}</p>
+</section>
+${sections}
+<section class="guide">
+  ${u.closing.map((p) => `<p>${esc(p)}</p>`).join('\n  ')}
+  <h2>${esc(t.urgent.sourcesH2)}</h2>
+  <ul>${sources.map((s) => `<li><a href="${esc(s.url)}" rel="noopener" target="_blank">${esc(s.name)}</a></li>`).join('')}</ul>
+  <p><a class="button-link" href="${homePath(lang)}">${esc(t.navCheck)}</a></p>
+</section>`;
+  return page({ lang, path: urgentPath(lang), title: t.urgent.title, description: t.urgent.description, body, altPath: urgentPath(lang === 'es' ? 'it' : 'es') }, site);
 }
 
 const PRIVACY: Record<Lang, { title: string; description: string; paragraphs: string[] }> = {
@@ -291,7 +329,9 @@ export function resultPage(lang: Lang, level: Level, pattern: Pattern | null, te
     level === 'sin_senales'
       ? ''
       : `${familyActions(lang, level, patternLabel(pattern, lang))}
-  <a class="share-wa" href="${shareFamilyUrl(lang, pattern, site)}" target="_blank" rel="noopener">${esc(t.shareFamily)}</a>`;
+  <a class="share-wa" href="${shareFamilyUrl(lang, pattern, site)}" target="_blank" rel="noopener">${esc(t.shareFamily)}</a>${
+    level === 'alto' ? `\n  <p class="urgent-link"><a href="${urgentPath(lang)}">${esc(t.urgent.link)}</a></p>` : ''
+  }`;
   const body = `<section class="result result-page">
   <h1 class="visually-hidden">${esc(t.sharedTitle)}</h1>
   <p class="pill ${level}">${esc(t.levelNames[level])}</p>

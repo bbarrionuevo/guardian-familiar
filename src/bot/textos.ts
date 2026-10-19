@@ -32,6 +32,7 @@ export const TEXTS: Record<Lang, BotTexts> = {
     help:
       'Reenvíeme el mensaje que le parece raro (texto, captura o audio) y le contesto con el nivel de riesgo y qué hacer.\n\n' +
       '/familia: crea un enlace para que un familiar quede conectado con usted.\n' +
+      '/urgente: qué hacer si ya pagó o dio sus datos.\n' +
       '/desvincular: borra los vínculos con su familia.\n' +
       '/borrar: borra todos sus datos.\n' +
       '/privacidad: qué hago con sus mensajes.\n' +
@@ -69,6 +70,7 @@ export const TEXTS: Record<Lang, BotTexts> = {
     help:
       'Inoltrami il messaggio che ti sembra strano (testo, screenshot o audio) e ti rispondo con il livello di rischio e cosa fare.\n\n' +
       '/famiglia: crea un link per collegare un familiare.\n' +
+      '/urgente: cosa fare se hai già pagato o dato i tuoi dati.\n' +
       '/scollega: cancella i collegamenti con la tua famiglia.\n' +
       '/cancella: cancella tutti i tuoi dati.\n' +
       '/privacy: cosa faccio con i tuoi messaggi.\n' +
@@ -117,7 +119,7 @@ export const PROFILE: Record<Lang, { name: string; description: string; shortDes
 };
 
 // Comandos en los dos idiomas.
-export const COMMANDS: Record<string, 'start' | 'help' | 'family' | 'unlink' | 'delete' | 'privacy' | 'lang_es' | 'lang_it'> = {
+export const COMMANDS: Record<string, 'start' | 'help' | 'family' | 'unlink' | 'delete' | 'urgent' | 'privacy' | 'lang_es' | 'lang_it'> = {
   start: 'start',
   ayuda: 'help',
   aiuto: 'help',
@@ -128,6 +130,7 @@ export const COMMANDS: Record<string, 'start' | 'help' | 'family' | 'unlink' | '
   scollega: 'unlink',
   borrar: 'delete',
   cancella: 'delete',
+  urgente: 'urgent',
   privacidad: 'privacy',
   privacy: 'privacy',
   idioma: 'lang_es',

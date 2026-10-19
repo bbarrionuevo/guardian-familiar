@@ -38,6 +38,7 @@ npx wrangler deploy --dry-run --outdir /tmp/worker
   - `telegram-api.ts` y `whatsapp.ts`: cada canal traduce lo que recibe y sabe responder.
   - `almacen.ts`: KV, solo usuarios, vínculos e invitaciones. Las claves de Telegram no llevan prefijo; las de WhatsApp, `wa:`. Un usuario se borra solo a los 13 meses sin uso.
   - `contadores.ts`: límites diarios y métricas. Corren en el Durable Object de `src/servidor/contadores.ts`, que cada noche borra los usos del día anterior (tienen ids e IPs).
+  - `urgente.ts`: qué hacer si ya pagó o dio sus datos, por país. **Cada número, horario y dirección sale de la página oficial de su `sources`**: antes de cambiar uno, se lee de nuevo ahí (desde el sandbox no se llega a los sitios públicos: se leen con `leggi-fonti.yml` de strumentiutili.it).
   - `transcriptor.ts` y `textos.ts`.
 - `src/servidor/worker.ts`: las rutas del Worker; `web.ts`: las de la web (revisar, compartir, eventos).
 - `redireccion/`: el Worker de la dirección anterior (`guardian-familiar.*.workers.dev`), que manda todo a la nueva.
