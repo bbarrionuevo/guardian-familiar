@@ -28,7 +28,7 @@ Los audios se pasan a texto con Whisper de Cloudflare. No se guarda el texto, la
    |---|---|
    | `BOT_TOKEN` | El token de BotFather |
    | `BOT_USERNAME` | El usuario del bot, sin @ |
-   | `TELEGRAM_SECRET` | Una contraseña larga inventada (solo letras, números, `-` y `_`) |
+   | `TELEGRAM_SECRET` | Una contraseña larga inventada |
    | `CLOUDFLARE_API_TOKEN` | El token de Cloudflare |
    | `CLOUDFLARE_ACCOUNT_ID` | El Account ID |
    | `KV_ID` | El ID del espacio KV |

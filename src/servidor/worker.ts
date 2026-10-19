@@ -11,6 +11,7 @@ import { analyze } from '../motor/analizar';
 import { createClaudeClassifier, type AiClassifier } from '../motor/ia';
 import { langFromCode } from '../motor/normalizar';
 import { renderVerdict } from '../motor/respuestas';
+import { telegramHeaderSecret } from './secreto';
 
 export interface Env {
   GUARDIAN_KV: KVNamespace;
@@ -54,7 +55,8 @@ export default {
     if (url.pathname === '/salud') return json({ ok: true });
 
     if (url.pathname === '/telegram/webhook' && request.method === 'POST') {
-      if (!safeEqual(request.headers.get('x-telegram-bot-api-secret-token') ?? '', env.TELEGRAM_SECRET ?? '')) {
+      const expected = env.TELEGRAM_SECRET ? await telegramHeaderSecret(env.TELEGRAM_SECRET) : '';
+      if (!safeEqual(request.headers.get('x-telegram-bot-api-secret-token') ?? '', expected)) {
         return new Response('forbidden', { status: 403 });
       }
       const update = (await request.json()) as TgUpdate;

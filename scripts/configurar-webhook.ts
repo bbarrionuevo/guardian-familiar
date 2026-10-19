@@ -1,16 +1,14 @@
 // Conecta el bot de Telegram con el Worker y carga los comandos en los dos idiomas.
 //   BOT_TOKEN=… TELEGRAM_SECRET=… WORKER_URL=https://guardian-familiar.<cuenta>.workers.dev npx tsx scripts/configurar-webhook.ts
 
+import { telegramHeaderSecret } from '../src/servidor/secreto';
+
 const token = process.env.BOT_TOKEN;
 const secret = process.env.TELEGRAM_SECRET;
 const workerUrl = process.env.WORKER_URL?.replace(/\/$/, '');
 
 if (!token || !secret || !workerUrl) {
   console.error('Faltan BOT_TOKEN, TELEGRAM_SECRET o WORKER_URL.');
-  process.exit(1);
-}
-if (!/^[A-Za-z0-9_-]{1,256}$/.test(secret)) {
-  console.error('TELEGRAM_SECRET solo puede tener letras, números, «_» y «-» (máximo 256).');
   process.exit(1);
 }
 
@@ -27,7 +25,7 @@ async function call(method: string, body: Record<string, unknown>) {
 
 await call('setWebhook', {
   url: `${workerUrl}/telegram/webhook`,
-  secret_token: secret,
+  secret_token: await telegramHeaderSecret(secret),
   allowed_updates: ['message'],
   drop_pending_updates: true,
 });
@@ -64,5 +62,3 @@ await call('setMyCommands', {
     { command: 'lingua', description: 'Italiano' },
   ],
 });
-
-export {};
