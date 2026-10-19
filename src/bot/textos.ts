@@ -51,7 +51,8 @@ export const TEXTS: Record<Lang, BotTexts> = {
       `Para que le avise cuando su familiar reciba un mensaje de riesgo alto, mándele el mensaje de abajo y pídale que toque el enlace. El enlace vale 7 días.\n\n${link}`,
     inviteToForward: (link) => `Hola, te paso Pausa, un asistente que revisa mensajes sospechosos. Con este enlace quedamos conectados: ${link}`,
     linkedParent: (child) => `✅ Listo. Cuando le llegue un mensaje de riesgo alto, también le aviso a ${child}.`,
-    linkedChild: (parent) => `✅ Ya está: ${parent} abrió su enlace. Le voy a avisar cuando reciba un mensaje de riesgo alto.`,
+    linkedChild: (parent) =>
+      `✅ Ya está: ${parent} abrió su enlace. Le voy a avisar cuando reciba un mensaje de riesgo alto.\n\n¿Hay otra persona mayor en su familia? Escriba /familia y le doy otro enlace.`,
     inviteInvalid: 'Ese enlace ya no vale. Pídale a su familiar uno nuevo.',
     inviteSelf: 'Este enlace es para su familiar, no para usted. Mándeselo por WhatsApp o por Telegram.',
     unlinked: 'Listo, borré los vínculos con su familia.',
@@ -87,7 +88,8 @@ export const TEXTS: Record<Lang, BotTexts> = {
       `Per ricevere un avviso quando un tuo familiare riceve un messaggio a rischio alto, mandagli il messaggio qui sotto e chiedigli di aprire il link. Il link vale 7 giorni.\n\n${link}`,
     inviteToForward: (link) => `Ciao, ti mando Pausa, un assistente che controlla i messaggi sospetti. Con questo link restiamo collegati: ${link}`,
     linkedParent: (child) => `✅ Fatto. Quando ti arriva un messaggio a rischio alto, avviso anche ${child}.`,
-    linkedChild: (parent) => `✅ Fatto: ${parent} ha aperto il tuo link. Ti avviserò quando riceve un messaggio a rischio alto.`,
+    linkedChild: (parent) =>
+      `✅ Fatto: ${parent} ha aperto il tuo link. Ti avviserò quando riceve un messaggio a rischio alto.\n\nC’è un’altra persona anziana in famiglia? Scrivi /famiglia e ti do un altro link.`,
     inviteInvalid: 'Questo link non è più valido. Chiedi al tuo familiare di mandartene uno nuovo.',
     inviteSelf: 'Questo link è per il tuo familiare, non per te. Mandaglielo su WhatsApp o Telegram.',
     unlinked: 'Fatto, ho cancellato i collegamenti con la tua famiglia.',

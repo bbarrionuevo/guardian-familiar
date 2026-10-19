@@ -69,6 +69,30 @@ describe('web generada', () => {
     expect(JSON.parse(read('it/manifest.webmanifest')).name).toBe('Pausa');
   });
 
+  it('la página para la familia tiene el formulario con etiquetas, la prueba y el verificador', () => {
+    for (const [lang, path, other] of [['es', 'es/familia/', '/it/famiglia/'], ['it', 'it/famiglia/', '/es/familia/']] as const) {
+      const html = read(path);
+      expect(html).toContain('<label for="familiar-nombre">');
+      expect(html).toContain('<label for="familiar-telefono">');
+      expect(html).toContain('type="tel"');
+      expect(html).toContain('data-fill=');
+      expect(html).toContain('data-checker');
+      expect(html).toContain('class="install-btn"');
+      expect(html).toContain(`hreflang="${lang === 'es' ? 'it' : 'es'}" href="https://pausa.briaan-b.workers.dev${other}"`);
+      expect(words(html)).toBeGreaterThan(350);
+      // Se llega desde el inicio y desde el menú de todas las páginas.
+      expect(read(`${lang}/`)).toContain(`href="/${path}"`);
+    }
+    expect(read('sitemap.xml')).toContain('/es/familia/');
+  });
+
+  it('cada verificador trae los botones para llamar al familiar guardado', () => {
+    const html = read('es/');
+    expect(html).toContain('class="family-actions" hidden');
+    expect(html).toContain('data-call="Llamar a {name}"');
+    expect(html).toContain('class="family-setup" hidden');
+  });
+
   it('el sitemap lista todas las páginas', () => {
     const sitemap = read('sitemap.xml');
     for (const g of GUIDES) {
@@ -107,6 +131,7 @@ describe('rutas web del Worker', () => {
     expect(html).toContain('No transfiera nada');
     expect(html).toContain('https://wa.me/?text=');
     expect(html).toContain('noindex');
+    expect(html).toContain('class="family-actions" hidden data-level="alto" data-label="falso familiar con número nuevo"');
     const day = new Date().toISOString().slice(0, 10);
     expect(counters.storage.data.get(`st:web:${day}`)).toMatchObject({ revisiones: 1, alto: 1, desde_compartir: 1 });
     // El texto revisado no queda guardado: ni en KV ni en los contadores.

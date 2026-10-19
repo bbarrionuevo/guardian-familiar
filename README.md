@@ -15,6 +15,7 @@ El mismo Worker sirve una web en español (`/es/`) y en italiano (`/it/`), gener
 - **Verificador:** se pega el mensaje o se sube una captura, y responde igual que el bot.
 - **App instalable:** en Android, con Chrome, se instala desde el menú. Después, en WhatsApp se mantiene apretado un mensaje y se elige «Compartir → Pausa», sin copiar ni pegar.
 - **Avisar a la familia:** cada resultado de riesgo y cada guía tienen un botón para mandar el aviso a un grupo de WhatsApp. Es la forma de que el sitio se difunda solo.
+- **Para la familia** (`/es/familia/`, `/it/famiglia/`): guía para que un hijo o una hija deje Pausa listo en el teléfono de sus padres, con una prueba y la palabra clave familiar. Ahí se guarda el nombre y el número del hijo **solo en ese teléfono** (no llega al servidor); cuando Pausa ve un riesgo, muestra botones grandes para llamarlo o escribirle por WhatsApp. Funciona sin WhatsApp Business ni costos.
 - **Guías:** 12 estafas comunes por idioma, con ejemplos reales y sus fuentes, para que lleguen visitas desde Google.
 
 Para cambiar la dirección del sitio (al comprar un dominio), se cambia `SITIO_URL` en `src/web/config.ts`. El ícono se dibuja con `node scripts/generar-iconos.mjs`.

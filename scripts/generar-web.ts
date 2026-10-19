@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import type { Lang } from '../src/motor/tipos';
 import { siteConfig } from '../src/web/config';
 import { GUIDES } from '../src/web/guias';
-import { guidePage, guidePath, homePage, homePath, notFoundPage, privacyPage, privacyPath, type Example } from '../src/web/plantilla';
+import { familyPage, familyPath, guidePage, guidePath, homePage, homePath, notFoundPage, privacyPage, privacyPath, type Example } from '../src/web/plantilla';
 import { WEB } from '../src/web/textos-web';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -126,8 +126,9 @@ function main() {
   for (const lang of LANGS) {
     write(homePath(lang), homePage(lang, site));
     write(privacyPath(lang), privacyPage(lang, site));
+    write(familyPath(lang), familyPage(lang, site));
     write(`${lang}/manifest.webmanifest`, manifest(lang));
-    urls.push(homePath(lang), privacyPath(lang));
+    urls.push(homePath(lang), familyPath(lang), privacyPath(lang));
     for (const g of GUIDES) {
       const examples: Example[] = g[lang].examples.map((id) => {
         const row = bank.get(id);

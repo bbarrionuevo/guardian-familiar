@@ -1,6 +1,85 @@
 // Verificador en el navegador: manda el texto o la captura a /api/analizar y muestra el resultado.
+// También guarda en el teléfono el contacto de un familiar (nunca se manda al servidor) para
+// llamarlo o escribirle con un toque cuando hay riesgo.
 (function () {
   'use strict';
+
+  var FAMILY_KEY = 'pausa-familiar';
+
+  // El almacenamiento del navegador puede no estar (modo privado, datos borrados): todo con try.
+  function loadFamily() {
+    try {
+      var v = JSON.parse(localStorage.getItem(FAMILY_KEY) || 'null');
+      return v && v.nombre && v.telefono ? v : null;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  // Número con + y código de país: «+54 9 11 1234-5678» → «+5491112345678».
+  function normalizePhone(value) {
+    var t = String(value || '').replace(/[\s().\/-]/g, '');
+    if (t.indexOf('00') === 0) t = '+' + t.slice(2);
+    return /^\+[1-9]\d{7,14}$/.test(t) ? t : null;
+  }
+
+  // Completa los botones para llamar o escribir al familiar, o muestra el enlace para guardarlo.
+  function updateFamily(block, level, label) {
+    var setup = block.parentNode.querySelector('.family-setup');
+    var risky = level === 'alto' || level === 'medio';
+    var fam = risky ? loadFamily() : null;
+    block.hidden = !fam;
+    if (setup) setup.hidden = !risky || !!fam;
+    if (!fam) return;
+    function fill(template) {
+      return template
+        .replace(' ({label})', label ? ' (' + label + ')' : '')
+        .split('{name}')
+        .join(fam.nombre);
+    }
+    block.querySelector('.family-lead').textContent = fill(block.getAttribute('data-lead'));
+    var call = block.querySelector('.call-btn');
+    call.href = 'tel:' + fam.telefono;
+    call.textContent = '📞 ' + fill(block.getAttribute('data-call'));
+    var wa = block.querySelector('.wa-btn');
+    wa.href = 'https://wa.me/' + fam.telefono.slice(1) + '?text=' + encodeURIComponent(fill(block.getAttribute('data-message')));
+    wa.textContent = '💬 ' + fill(block.getAttribute('data-whatsapp'));
+  }
+
+  function setupFamilyForm(form) {
+    var status = form.querySelector('.family-status');
+    var name = form.querySelector('[name="nombre"]');
+    var phone = form.querySelector('[name="telefono"]');
+    var fam = loadFamily();
+    if (fam) {
+      name.value = fam.nombre;
+      phone.value = fam.telefono;
+    }
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var nombre = name.value.replace(/\s+/g, ' ').trim().slice(0, 40);
+      var telefono = normalizePhone(phone.value);
+      if (!nombre || !telefono) {
+        status.textContent = form.getAttribute('data-invalid');
+        return;
+      }
+      try {
+        localStorage.setItem(FAMILY_KEY, JSON.stringify({ nombre: nombre, telefono: telefono }));
+        phone.value = telefono;
+        status.textContent = form.getAttribute('data-saved').split('{name}').join(nombre);
+      } catch (err) {
+        status.textContent = form.getAttribute('data-invalid');
+      }
+    });
+    form.querySelector('[data-clear]').addEventListener('click', function () {
+      try {
+        localStorage.removeItem(FAMILY_KEY);
+      } catch (err) {}
+      name.value = '';
+      phone.value = '';
+      status.textContent = form.getAttribute('data-cleared');
+    });
+  }
 
   // Achica la captura antes de mandarla: menos datos y más rápido en el teléfono.
   function shrinkImage(file) {
@@ -35,6 +114,7 @@
     var pill = result.querySelector('.pill');
     var text = result.querySelector('.result-text');
     var share = result.querySelector('.share-wa');
+    var family = result.querySelector('.family-actions');
     var fileInput = form.querySelector('.file-input');
     var fileName = form.querySelector('.file-name');
     var button = form.querySelector('button[type="submit"]');
@@ -74,6 +154,7 @@
       } else {
         share.hidden = true;
       }
+      if (family) updateFamily(family, level, label);
       result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
@@ -111,6 +192,7 @@
           pill.textContent = '';
           text.textContent = form.getAttribute('data-error');
           share.hidden = true;
+          if (family) updateFamily(family, null, null);
         })
         .then(function () {
           button.disabled = false;
@@ -126,6 +208,20 @@
   }
 
   document.querySelectorAll('form[data-checker]').forEach(setupChecker);
+  document.querySelectorAll('form[data-family]').forEach(setupFamilyForm);
+  // Página de resultado de «Compartir»: el nivel ya viene escrito en la página.
+  document.querySelectorAll('.family-actions[data-level]').forEach(function (block) {
+    updateFamily(block, block.getAttribute('data-level'), block.getAttribute('data-label'));
+  });
+  // «Cargar un mensaje de prueba» en la página para la familia.
+  document.querySelectorAll('[data-fill]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      var area = document.getElementById('mensaje');
+      if (!area) return;
+      area.value = button.getAttribute('data-fill');
+      area.focus();
+    });
+  });
 
   // Botón «Instalar» cuando el navegador lo permite (Chrome en Android).
   var installEvent = null;

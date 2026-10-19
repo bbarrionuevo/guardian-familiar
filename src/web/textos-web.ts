@@ -48,6 +48,41 @@ export interface WebTexts {
   sharedBack: string;
   notFoundTitle: string;
   notFoundText: string;
+  family: FamilyTexts;
+}
+
+// Contacto de un familiar guardado en el teléfono (solo ahí: no se manda al servidor) y la página
+// para que un hijo o una hija deje Pausa listo en el teléfono de sus padres.
+export interface FamilyTexts {
+  nav: string;
+  cardH2: string;
+  cardText: string;
+  cardButton: string;
+  // En los resultados con riesgo. {name} es el familiar guardado y {label}, el tipo de estafa.
+  lead: string;
+  call: string;
+  whatsapp: string;
+  message: string;
+  setupLink: string;
+  // La página.
+  title: string;
+  description: string;
+  intro: string[];
+  // «extra» dice qué va debajo del paso: el botón de instalar, el formulario, la prueba o Telegram.
+  steps: { h2: string; text: string[]; extra?: 'install' | 'contact' | 'test' | 'telegram' }[];
+  iphone: string;
+  nameLabel: string;
+  namePlaceholder: string;
+  phoneLabel: string;
+  phonePlaceholder: string;
+  phoneHelp: string;
+  save: string;
+  saved: string;
+  clear: string;
+  cleared: string;
+  invalid: string;
+  testButton: string;
+  testMessage: string;
 }
 
 export const WEB: Record<Lang, WebTexts> = {
@@ -105,6 +140,85 @@ export const WEB: Record<Lang, WebTexts> = {
     sharedBack: 'Revisar otro mensaje',
     notFoundTitle: 'Página no encontrada',
     notFoundText: 'Esta página no existe. Puede revisar un mensaje desde el inicio.',
+    family: {
+      nav: 'Para la familia',
+      cardH2: '¿Es para su mamá o su papá?',
+      cardText:
+        'Déjelo listo en el teléfono de ellos en dos minutos: la app instalada, su número guardado para que lo llamen con un toque y una prueba juntos.',
+      cardButton: 'Cómo dejarlo listo',
+      lead: 'Antes de responder o pagar, hable con {name}.',
+      call: 'Llamar a {name}',
+      whatsapp: 'Escribirle a {name} por WhatsApp',
+      message: 'Me llegó un mensaje que puede ser una estafa ({label}). ¿Podemos hablar?',
+      setupLink: 'Guarde el teléfono de un familiar para llamarlo con un toque',
+      title: 'Cómo dejar Pausa listo en el teléfono de sus padres',
+      description:
+        'En dos minutos: instale la app en el teléfono de su mamá o su papá, guarde su número para que lo llamen con un toque y practiquen juntos con un mensaje de prueba.',
+      intro: [
+        'Las estafas por mensaje funcionan porque meten prisa: «es urgente», «hoy mismo», «su cuenta se bloquea». Pausa sirve para frenar ese impulso. Antes de responder o pagar, su mamá o su papá le manda el mensaje a Pausa y recibe una respuesta clara, con una sola cosa para hacer.',
+        'Lo mejor es dejarlo listo juntos, con el teléfono de ellos en la mano. Son cinco pasos y llevan unos dos minutos.',
+      ],
+      steps: [
+        {
+          h2: '1. Instale la app',
+          extra: 'install',
+          text: [
+            'Abra esta página en el teléfono de ellos, con Chrome. Toque el botón de abajo o, si no aparece, los tres puntos ⋮ de arriba y «Instalar aplicación». Queda el ícono de Pausa en la pantalla.',
+          ],
+        },
+        {
+          h2: '2. Guarde su nombre y su número',
+          extra: 'contact',
+          text: [
+            'Cuando Pausa vea un mensaje con riesgo, va a mostrar un botón grande para llamarlo a usted y otro para escribirle por WhatsApp. Así, en el momento de la duda, hablar con usted está a un toque.',
+            'Su nombre y su número quedan guardados solo en ese teléfono: a nosotros no nos llegan.',
+          ],
+        },
+        {
+          h2: '3. Hagan una prueba juntos',
+          extra: 'test',
+          text: [
+            'Toque «Cargar un mensaje de prueba» y después «Revisar mensaje». Van a ver cómo responde Pausa ante una estafa y el botón para llamarlo a usted.',
+          ],
+        },
+        {
+          h2: '4. Explique la regla',
+          text: [
+            'Una sola regla, fácil de recordar: si llega algo raro, antes de responder, se lo mandamos a Pausa.',
+            'En WhatsApp: se mantiene apretado el mensaje, se tocan los tres puntos ⋮, «Compartir» y «Pausa». También sirve para SMS, emails y capturas de pantalla.',
+          ],
+        },
+        {
+          h2: '5. Elijan una palabra clave familiar',
+          text: [
+            'Elijan juntos una palabra o una pregunta que solo conozca la familia. Si alguien escribe o llama diciendo que es un hijo o un nieto y pide plata, se le pregunta la palabra clave.',
+            'Un estafador no la sabe, aunque escriba desde un número nuevo, mande una foto de perfil conocida o imite una voz.',
+          ],
+        },
+        {
+          h2: 'Si quiere que el aviso le llegue solo',
+          extra: 'telegram',
+          text: [
+            'Con el bot de Telegram, cuando a su mamá o su papá le llega un mensaje de riesgo alto, el aviso le llega a usted sin que tengan que hacer nada. En el bot escriba /familia y mándele a ellos el enlace que le da.',
+          ],
+        },
+      ],
+      iphone:
+        'En iPhone: abra la página con Safari, toque Compartir y «Agregar a inicio». Ahí todavía no se puede compartir directo desde WhatsApp: hay que copiar el mensaje y pegarlo en Pausa.',
+      nameLabel: 'Su nombre, como lo llaman ellos',
+      namePlaceholder: 'Por ejemplo: Lucía',
+      phoneLabel: 'Su teléfono, con el código del país',
+      phonePlaceholder: '+54 9 11 1234 5678',
+      phoneHelp: 'Con + y el código del país: +34 para España, +39 para Italia y +54 9 para celulares de Argentina.',
+      save: 'Guardar en este teléfono',
+      saved: 'Listo. Cuando Pausa vea un riesgo, va a mostrar un botón para llamar a {name}.',
+      clear: 'Borrar',
+      cleared: 'Listo, se borró el contacto de este teléfono.',
+      invalid: 'Escriba un nombre y el número con + y el código del país, por ejemplo +34 612 345 678.',
+      testButton: 'Cargar un mensaje de prueba',
+      testMessage:
+        'Hola mamá, se me rompió el celular y este es mi número nuevo. Necesito que me hagas una transferencia hoy, es urgente. Después te explico.',
+    },
   },
   it: {
     siteName: 'Pausa',
@@ -160,5 +274,84 @@ export const WEB: Record<Lang, WebTexts> = {
     sharedBack: 'Controlla un altro messaggio',
     notFoundTitle: 'Pagina non trovata',
     notFoundText: 'Questa pagina non esiste. Puoi controllare un messaggio dalla pagina iniziale.',
+    family: {
+      nav: 'Per la famiglia',
+      cardH2: 'È per tua mamma o tuo papà?',
+      cardText:
+        'Preparalo sul loro telefono in due minuti: l’app installata, il tuo numero salvato per farti chiamare con un tocco e una prova insieme.',
+      cardButton: 'Come prepararlo',
+      lead: 'Prima di rispondere o pagare, parla con {name}.',
+      call: 'Chiama {name}',
+      whatsapp: 'Scrivi a {name} su WhatsApp',
+      message: 'Mi è arrivato un messaggio che può essere una truffa ({label}). Possiamo sentirci?',
+      setupLink: 'Salva il numero di un familiare per chiamarlo con un tocco',
+      title: 'Come preparare Pausa sul telefono dei tuoi genitori',
+      description:
+        'In due minuti: installa l’app sul telefono di tua mamma o tuo papà, salva il tuo numero per farti chiamare con un tocco e fate insieme una prova con un messaggio finto.',
+      intro: [
+        'Le truffe via messaggio funzionano perché mettono fretta: «è urgente», «entro oggi», «il conto verrà bloccato». Pausa serve a fermare quell’impulso. Prima di rispondere o pagare, tua mamma o tuo papà manda il messaggio a Pausa e riceve una risposta chiara, con una sola cosa da fare.',
+        'La cosa migliore è prepararlo insieme, con il loro telefono in mano. Sono cinque passi e ci vogliono circa due minuti.',
+      ],
+      steps: [
+        {
+          h2: '1. Installa l’app',
+          extra: 'install',
+          text: [
+            'Apri questa pagina sul loro telefono, con Chrome. Tocca il pulsante qui sotto oppure, se non compare, i tre puntini ⋮ in alto e «Installa app». Sulla schermata compare l’icona di Pausa.',
+          ],
+        },
+        {
+          h2: '2. Salva il tuo nome e il tuo numero',
+          extra: 'contact',
+          text: [
+            'Quando Pausa vede un messaggio a rischio, mostra un grande pulsante per chiamarti e un altro per scriverti su WhatsApp. Così, nel momento del dubbio, parlare con te è a un tocco.',
+            'Il tuo nome e il tuo numero restano salvati solo su quel telefono: a noi non arrivano.',
+          ],
+        },
+        {
+          h2: '3. Fate una prova insieme',
+          extra: 'test',
+          text: [
+            'Tocca «Carica un messaggio di prova» e poi «Controlla il messaggio». Vedrete come risponde Pausa a una truffa e il pulsante per chiamarti.',
+          ],
+        },
+        {
+          h2: '4. Spiega la regola',
+          text: [
+            'Una sola regola, facile da ricordare: se arriva qualcosa di strano, prima di rispondere lo mandiamo a Pausa.',
+            'Su WhatsApp: si tiene premuto il messaggio, si toccano i tre puntini ⋮, «Condividi» e «Pausa». Funziona anche con SMS, email e screenshot.',
+          ],
+        },
+        {
+          h2: '5. Scegliete una parola d’ordine di famiglia',
+          text: [
+            'Scegliete insieme una parola o una domanda che conosce solo la famiglia. Se qualcuno scrive o chiama dicendo di essere un figlio o un nipote e chiede soldi, gli si chiede la parola d’ordine.',
+            'Un truffatore non la sa, anche se scrive da un numero nuovo, usa una foto profilo conosciuta o imita una voce.',
+          ],
+        },
+        {
+          h2: 'Se vuoi che l’avviso ti arrivi da solo',
+          extra: 'telegram',
+          text: [
+            'Con il bot di Telegram, quando a tua mamma o tuo papà arriva un messaggio a rischio alto, l’avviso arriva a te senza che debbano fare nulla. Nel bot scrivi /famiglia e manda a loro il link che ti dà.',
+          ],
+        },
+      ],
+      iphone:
+        'Su iPhone: apri la pagina con Safari, tocca Condividi e «Aggiungi alla schermata Home». Lì non si può ancora condividere direttamente da WhatsApp: bisogna copiare il messaggio e incollarlo in Pausa.',
+      nameLabel: 'Il tuo nome, come ti chiamano loro',
+      namePlaceholder: 'Per esempio: Lucia',
+      phoneLabel: 'Il tuo telefono, con il prefisso del paese',
+      phonePlaceholder: '+39 333 123 4567',
+      phoneHelp: 'Con il + e il prefisso del paese: +39 per l’Italia, +34 per la Spagna e +54 9 per i cellulari argentini.',
+      save: 'Salva su questo telefono',
+      saved: 'Fatto. Quando Pausa vede un rischio, mostra un pulsante per chiamare {name}.',
+      clear: 'Cancella',
+      cleared: 'Fatto, il contatto è stato cancellato da questo telefono.',
+      invalid: 'Scrivi un nome e il numero con il + e il prefisso del paese, per esempio +39 333 123 4567.',
+      testButton: 'Carica un messaggio di prova',
+      testMessage:
+        'Ciao mamma, mi si è rotto il telefono e questo è il mio nuovo numero. Ho bisogno che mi fai un bonifico oggi, è urgente. Poi ti spiego.',
+    },
   },
 };

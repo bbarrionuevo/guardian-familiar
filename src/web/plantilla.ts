@@ -14,6 +14,7 @@ export const homePath = (lang: Lang) => `/${lang}/`;
 export const guidesBase = (lang: Lang) => (lang === 'es' ? '/es/estafas/' : '/it/truffe/');
 export const guidePath = (g: Guide, lang: Lang) => `${guidesBase(lang)}${g[lang].slug}/`;
 export const privacyPath = (lang: Lang) => (lang === 'es' ? '/es/privacidad/' : '/it/privacy/');
+export const familyPath = (lang: Lang) => (lang === 'es' ? '/es/familia/' : '/it/famiglia/');
 
 export interface Example {
   text: string;
@@ -73,6 +74,7 @@ ${hreflang}
     <nav class="nav">
       <a href="${homePath(o.lang)}#revisar">${t.navCheck}</a>
       <a href="${homePath(o.lang)}#estafas">${t.navGuides}</a>
+      <a href="${familyPath(o.lang)}">${t.family.nav}</a>
       <a href="${alt}" hreflang="${other}" lang="${other}">${t.otherLang}</a>
     </nav>
   </div>
@@ -110,9 +112,39 @@ export function checker(lang: Lang, heading: string, hideHeading = false): strin
   <div class="result" hidden aria-live="polite">
     <p class="pill"></p>
     <div class="result-text"></div>
+    ${familyActions(lang)}
     <a class="share-wa" hidden target="_blank" rel="noopener">${esc(t.shareFamily)}</a>
   </div>
 </section>`;
+}
+
+// Botones para llamar o escribirle al familiar guardado en el teléfono. Los completa /app.js con
+// lo que hay en el teléfono; si no hay nadie guardado, muestra el enlace para guardarlo.
+function familyActions(lang: Lang, level?: Level, label?: string): string {
+  const f = WEB[lang].family;
+  const known = level ? ` data-level="${level}" data-label="${esc(label ?? '')}"` : '';
+  return `<div class="family-actions" hidden${known} data-lead="${esc(f.lead)}" data-call="${esc(f.call)}" data-whatsapp="${esc(f.whatsapp)}" data-message="${esc(f.message)}">
+      <p class="family-lead"></p>
+      <a class="call-btn" href="#"></a>
+      <a class="wa-btn" href="#" target="_blank" rel="noopener"></a>
+    </div>
+    <p class="family-setup" hidden><a href="${familyPath(lang)}">${esc(f.setupLink)}</a></p>`;
+}
+
+function familyForm(lang: Lang): string {
+  const f = WEB[lang].family;
+  return `<form class="family-form" data-family data-saved="${esc(f.saved)}" data-cleared="${esc(f.cleared)}" data-invalid="${esc(f.invalid)}">
+    <label for="familiar-nombre">${esc(f.nameLabel)}</label>
+    <input id="familiar-nombre" name="nombre" type="text" maxlength="40" autocomplete="off" placeholder="${esc(f.namePlaceholder)}">
+    <label for="familiar-telefono">${esc(f.phoneLabel)}</label>
+    <input id="familiar-telefono" name="telefono" type="tel" inputmode="tel" maxlength="24" autocomplete="off" placeholder="${esc(f.phonePlaceholder)}" aria-describedby="familiar-ayuda">
+    <p class="muted" id="familiar-ayuda">${esc(f.phoneHelp)}</p>
+    <div class="checker-row">
+      <button type="submit">${esc(f.save)}</button>
+      <button type="button" class="secondary" data-clear>${esc(f.clear)}</button>
+    </div>
+    <p class="family-status" aria-live="polite"></p>
+  </form>`;
 }
 
 export function shareFamilyUrl(lang: Lang, pattern: Pattern | null, site: SiteConfig): string {
@@ -134,6 +166,11 @@ export function homePage(lang: Lang, site: SiteConfig): string {
   <p class="lead">${esc(t.homeLead)}</p>
 </section>
 ${checker(lang, t.navCheck, true)}
+<section class="card" aria-labelledby="familia-h">
+  <h2 id="familia-h">${esc(t.family.cardH2)}</h2>
+  <p>${esc(t.family.cardText)}</p>
+  <p><a class="button-link" href="${familyPath(lang)}">${esc(t.family.cardButton)}</a></p>
+</section>
 <section class="card" aria-labelledby="instalar-h">
   <h2 id="instalar-h">${esc(t.installH2)}</h2>
   <ol class="steps">${t.installAndroid.map((s) => `<li>${esc(s)}</li>`).join('')}</ol>
@@ -189,6 +226,33 @@ ${checker(lang, t.guideCheckH2)}`;
   return page({ lang, path: guidePath(g, lang), title: gt.title, description: gt.description, body, altPath: guidePath(g, other) }, site);
 }
 
+// Página para que un hijo o una hija deje Pausa listo en el teléfono de sus padres.
+export function familyPage(lang: Lang, site: SiteConfig): string {
+  const t = WEB[lang];
+  const f = t.family;
+  const extras = {
+    install: `<button type="button" class="install-btn" hidden>${esc(t.installButton)}</button>\n  <p class="muted">${esc(f.iphone)}</p>`,
+    contact: familyForm(lang),
+    test: `<p><button type="button" class="secondary" data-fill="${esc(f.testMessage)}">${esc(f.testButton)}</button></p>\n  ${checker(lang, t.navCheck, true)}`,
+    telegram: `<p><a class="button-link" href="https://t.me/${site.botUsername}">${esc(t.telegramButton)}</a></p>`,
+  };
+  const steps = f.steps
+    .map(
+      (s) => `<section class="card">
+  <h2>${esc(s.h2)}</h2>
+  ${s.text.map((p) => `<p>${esc(p)}</p>`).join('\n  ')}
+  ${s.extra ? extras[s.extra] : ''}
+</section>`,
+    )
+    .join('\n');
+  const body = `<section class="hero">
+  <h1>${esc(f.title)}</h1>
+  ${f.intro.map((p) => `<p class="lead">${esc(p)}</p>`).join('\n  ')}
+</section>
+${steps}`;
+  return page({ lang, path: familyPath(lang), title: f.title, description: f.description, body, altPath: familyPath(lang === 'es' ? 'it' : 'es') }, site);
+}
+
 const PRIVACY: Record<Lang, { title: string; description: string; paragraphs: string[] }> = {
   es: {
     title: 'Privacidad',
@@ -223,7 +287,11 @@ export function privacyPage(lang: Lang, site: SiteConfig): string {
 // Página de resultado cuando el mensaje llega por «Compartir» desde otra app.
 export function resultPage(lang: Lang, level: Level, pattern: Pattern | null, text: string, site: SiteConfig): string {
   const t = WEB[lang];
-  const share = level === 'sin_senales' ? '' : `<a class="share-wa" href="${shareFamilyUrl(lang, pattern, site)}" target="_blank" rel="noopener">${esc(t.shareFamily)}</a>`;
+  const share =
+    level === 'sin_senales'
+      ? ''
+      : `${familyActions(lang, level, patternLabel(pattern, lang))}
+  <a class="share-wa" href="${shareFamilyUrl(lang, pattern, site)}" target="_blank" rel="noopener">${esc(t.shareFamily)}</a>`;
   const body = `<section class="result result-page">
   <h1 class="visually-hidden">${esc(t.sharedTitle)}</h1>
   <p class="pill ${level}">${esc(t.levelNames[level])}</p>
