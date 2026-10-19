@@ -9,18 +9,25 @@
 // El resto (páginas, estilos, íconos) lo sirven los assets de public/.
 
 import { KvStore } from '../bot/almacen';
-import { handleIncoming, handleUpdate, type DayStats } from '../bot/bot';
+import { handleIncoming, handleUpdate } from '../bot/bot';
+import { memoryCounters, type Counters } from '../bot/contadores';
 import type { Messenger } from '../bot/canal';
 import { createTelegramApi, telegramMessenger, type TgUpdate } from '../bot/telegram-api';
 import { validSignature, whatsappIncoming, whatsappMessenger } from '../bot/whatsapp';
 import { createWorkersAiTranscriber } from '../bot/transcriptor';
 import { createClaudeClassifier, type AiClassifier } from '../motor/ia';
 import { siteConfig } from '../web/config';
+import { durableCounters, type CounterNamespace } from './contadores';
 import { telegramHeaderSecret } from './secreto';
-import { handleAnalyze, handleEvent, handleShare, webStats, type WebStats } from './web';
+import { handleAnalyze, handleEvent, handleShare } from './web';
+
+// El Durable Object de los contadores tiene que salir del módulo principal.
+export { Contadores } from './contadores';
 
 export interface Env {
   GUARDIAN_KV: KVNamespace;
+  // Durable Object con los contadores (límites diarios y métricas).
+  CONTADORES?: CounterNamespace;
   ASSETS?: Fetcher;
   SITIO_URL?: string;
   AI?: { run(model: string, input: Record<string, unknown>): Promise<unknown> };
@@ -43,6 +50,9 @@ export interface Env {
 }
 
 const log = (m: string) => console.log(m);
+
+// Sin el Durable Object (desarrollo), contadores en memoria que duran lo que dura el pedido.
+const countersFrom = (env: Env): Counters => (env.CONTADORES ? durableCounters(env.CONTADORES, log) : memoryCounters());
 
 function aiFrom(env: Env): AiClassifier | null {
   return env.ANTHROPIC_API_KEY ? createClaudeClassifier({ apiKey: env.ANTHROPIC_API_KEY, workspaceId: env.ANTHROPIC_WORKSPACE_ID, model: env.GUARDIAN_MODELO, log }) : null;
@@ -90,6 +100,7 @@ export default {
       const deps = {
         api: createTelegramApi(env.BOT_TOKEN),
         store: new KvStore(env.GUARDIAN_KV),
+        counters: countersFrom(env),
         ai: aiFrom(env),
         transcriber: env.AI ? createWorkersAiTranscriber(env.AI, log) : null,
         botUsername: env.BOT_USERNAME,
@@ -117,6 +128,7 @@ export default {
       const deps = {
         messengers: { whatsapp, telegram: env.BOT_TOKEN ? telegramMessenger(createTelegramApi(env.BOT_TOKEN), env.BOT_USERNAME) : undefined },
         store: new KvStore(env.GUARDIAN_KV),
+        counters: countersFrom(env),
         ai: aiFrom(env),
         transcriber: env.AI ? createWorkersAiTranscriber(env.AI, log) : null,
         log,
@@ -125,27 +137,17 @@ export default {
       return new Response('ok');
     }
 
-    if (url.pathname === '/api/analizar') return handleAnalyze(request, env.GUARDIAN_KV, aiFrom(env));
-    if (url.pathname === '/api/evento') return handleEvent(request, env.GUARDIAN_KV);
+    if (url.pathname === '/api/analizar') return handleAnalyze(request, countersFrom(env), aiFrom(env));
+    if (url.pathname === '/api/evento') return handleEvent(request, countersFrom(env));
     const share = /^\/(es|it)\/compartir\/?$/.exec(url.pathname);
-    if (share) return handleShare(request, share[1] as 'es' | 'it', env.GUARDIAN_KV, aiFrom(env), siteConfig(env as unknown as Record<string, string>));
+    if (share) return handleShare(request, share[1] as 'es' | 'it', countersFrom(env), aiFrom(env), siteConfig(env as unknown as Record<string, string>));
 
     if (url.pathname === '/api/metricas' && request.method === 'GET') {
       const clave = url.searchParams.get('clave') ?? '';
       if (!env.METRICAS_CLAVE || !safeEqual(clave, env.METRICAS_CLAVE)) return new Response('forbidden', { status: 403 });
-      const store = new KvStore(env.GUARDIAN_KV);
-      const days: Record<string, { telegram?: DayStats & { usuarios: number }; web?: WebStats }> = {};
-      for (let i = 0; i < 14; i++) {
-        const day = new Date(Date.now() - i * 86_400_000).toISOString().slice(0, 10);
-        const stats = await store.get<DayStats>(`st:${day}`);
-        const web = await webStats(store, day);
-        if (stats || web) {
-          days[day] = {};
-          if (stats) days[day].telegram = { ...stats, usuarios: await store.count(`cnt:${day}:`) };
-          if (web) days[day].web = web;
-        }
-      }
-      return json(days);
+      // Por día, de las últimas dos semanas: «bot» (Telegram y WhatsApp) y «web».
+      const days = Array.from({ length: 14 }, (_, i) => new Date(Date.now() - i * 86_400_000).toISOString().slice(0, 10));
+      return json(await countersFrom(env).read(days));
     }
 
     // En producción los assets responden antes; esto queda para desarrollo y pruebas.

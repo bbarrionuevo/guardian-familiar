@@ -17,6 +17,7 @@ interface BotTexts {
   inviteInvalid: string;
   inviteSelf: string;
   unlinked: string;
+  deleted: string;
   nothingToUnlink: string;
   familyNotified: string;
 }
@@ -32,6 +33,7 @@ export const TEXTS: Record<Lang, BotTexts> = {
       'Reenvíeme el mensaje que le parece raro (texto, captura o audio) y le contesto con el nivel de riesgo y qué hacer.\n\n' +
       '/familia: crea un enlace para que un familiar quede conectado con usted.\n' +
       '/desvincular: borra los vínculos con su familia.\n' +
+      '/borrar: borra todos sus datos.\n' +
       '/privacidad: qué hago con sus mensajes.\n' +
       '/lingua: passa all’italiano.',
     privacy:
@@ -39,8 +41,8 @@ export const TEXTS: Record<Lang, BotTexts> = {
       '• No guardo el texto, las fotos ni los audios que me manda: los reviso y los descarto.\n' +
       '• Para revisarlos uso reglas propias y, cuando hace falta, la IA de Anthropic (Claude). Según sus condiciones, Anthropic no usa estos mensajes para entrenar su IA.\n' +
       '• Los audios los pasa a texto el servicio de Cloudflare.\n' +
-      '• Guardo solo su idioma, su nombre de Telegram y con quién está vinculado.\n' +
-      '• /desvincular borra los vínculos.',
+      '• Guardo solo su idioma, su nombre (en WhatsApp, también su número) y con quién está vinculado. Si no me usa durante un año, se borra solo.\n' +
+      '• /desvincular borra los vínculos y /borrar, todos sus datos.',
     langSet: 'Listo, le hablo en español.',
     unsupported: 'Puedo revisar texto, capturas de pantalla y audios. Reenvíeme el mensaje que le parece raro.',
     tooBig: 'El archivo es muy grande para revisarlo. Mándeme una captura de pantalla o copie el texto.',
@@ -53,6 +55,7 @@ export const TEXTS: Record<Lang, BotTexts> = {
     inviteInvalid: 'Ese enlace ya no vale. Pídale a su familiar uno nuevo.',
     inviteSelf: 'Este enlace es para su familiar, no para usted. Mándeselo por WhatsApp o por Telegram.',
     unlinked: 'Listo, borré los vínculos con su familia.',
+    deleted: 'Listo, borré todos sus datos: su nombre, su idioma y los vínculos con su familia. Si vuelve a escribirme, empiezo de cero.',
     nothingToUnlink: 'No tiene vínculos con ningún familiar.',
     familyNotified: '📣 Le avisé a su familiar.',
   },
@@ -66,6 +69,7 @@ export const TEXTS: Record<Lang, BotTexts> = {
       'Inoltrami il messaggio che ti sembra strano (testo, screenshot o audio) e ti rispondo con il livello di rischio e cosa fare.\n\n' +
       '/famiglia: crea un link per collegare un familiare.\n' +
       '/scollega: cancella i collegamenti con la tua famiglia.\n' +
+      '/cancella: cancella tutti i tuoi dati.\n' +
       '/privacy: cosa faccio con i tuoi messaggi.\n' +
       '/idioma: cambia a español.',
     privacy:
@@ -73,8 +77,8 @@ export const TEXTS: Record<Lang, BotTexts> = {
       '• Non conservo il testo, le foto o gli audio che mi mandi: li controllo e li scarto.\n' +
       "• Per controllarli uso regole mie e, quando serve, l'IA di Anthropic (Claude). Secondo le sue condizioni, Anthropic non usa questi messaggi per addestrare la sua IA.\n" +
       '• Gli audio vengono trascritti dal servizio di Cloudflare.\n' +
-      '• Conservo solo la tua lingua, il tuo nome su Telegram e con chi sei collegato.\n' +
-      '• /scollega cancella i collegamenti.',
+      '• Conservo solo la tua lingua, il tuo nome (su WhatsApp, anche il tuo numero) e con chi sei collegato. Se non mi usi per un anno, si cancella da solo.\n' +
+      '• /scollega cancella i collegamenti e /cancella tutti i tuoi dati.',
     langSet: 'Fatto, ti parlo in italiano.',
     unsupported: 'Posso controllare testo, screenshot e audio. Inoltrami il messaggio che ti sembra strano.',
     tooBig: 'Il file è troppo grande da controllare. Mandami uno screenshot o copia il testo.',
@@ -87,6 +91,7 @@ export const TEXTS: Record<Lang, BotTexts> = {
     inviteInvalid: 'Questo link non è più valido. Chiedi al tuo familiare di mandartene uno nuovo.',
     inviteSelf: 'Questo link è per il tuo familiare, non per te. Mandaglielo su WhatsApp o Telegram.',
     unlinked: 'Fatto, ho cancellato i collegamenti con la tua famiglia.',
+    deleted: 'Fatto, ho cancellato tutti i tuoi dati: nome, lingua e collegamenti con la famiglia. Se mi riscrivi, ricomincio da zero.',
     nothingToUnlink: 'Non sei collegato a nessun familiare.',
     familyNotified: '📣 Ho avvisato il tuo familiare.',
   },
@@ -110,7 +115,7 @@ export const PROFILE: Record<Lang, { name: string; description: string; shortDes
 };
 
 // Comandos en los dos idiomas.
-export const COMMANDS: Record<string, 'start' | 'help' | 'family' | 'unlink' | 'privacy' | 'lang_es' | 'lang_it'> = {
+export const COMMANDS: Record<string, 'start' | 'help' | 'family' | 'unlink' | 'delete' | 'privacy' | 'lang_es' | 'lang_it'> = {
   start: 'start',
   ayuda: 'help',
   aiuto: 'help',
@@ -119,6 +124,8 @@ export const COMMANDS: Record<string, 'start' | 'help' | 'family' | 'unlink' | '
   famiglia: 'family',
   desvincular: 'unlink',
   scollega: 'unlink',
+  borrar: 'delete',
+  cancella: 'delete',
   privacidad: 'privacy',
   privacy: 'privacy',
   idioma: 'lang_es',

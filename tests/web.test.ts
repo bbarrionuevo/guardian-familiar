@@ -5,6 +5,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import worker, { type Env } from '../src/servidor/worker';
 import { GUIDES } from '../src/web/guias';
 import { guidePath } from '../src/web/plantilla';
+import { fakeCounters } from './ayuda';
 
 const ROOT = join(import.meta.dirname, '..');
 const PUBLIC = join(ROOT, 'public');
@@ -95,7 +96,8 @@ const SCAM = 'Hola ma, se me rompió el celu, este es mi número nuevo. Necesito
 describe('rutas web del Worker', () => {
   it('lo que llega por «Compartir» devuelve una página con el resultado y cuenta la revisión', async () => {
     const kv = memoryKv();
-    const env = { GUARDIAN_KV: kv } as unknown as Env;
+    const counters = fakeCounters();
+    const env = { GUARDIAN_KV: kv, CONTADORES: counters.ns } as unknown as Env;
     const form = new FormData();
     form.set('text', SCAM);
     const res = await worker.fetch(new Request('https://w.dev/es/compartir', { method: 'POST', body: form }), env, ctx);
@@ -105,10 +107,11 @@ describe('rutas web del Worker', () => {
     expect(html).toContain('No transfiera nada');
     expect(html).toContain('https://wa.me/?text=');
     expect(html).toContain('noindex');
-    const stats = JSON.parse([...kv.data.entries()].find(([k]) => k.startsWith('stw:'))![1]);
-    expect(stats).toMatchObject({ revisiones: 1, alto: 1, desde_compartir: 1 });
-    // El texto revisado no queda guardado.
-    expect([...kv.data.values()].join(' ')).not.toContain('transfieras');
+    const day = new Date().toISOString().slice(0, 10);
+    expect(counters.storage.data.get(`st:web:${day}`)).toMatchObject({ revisiones: 1, alto: 1, desde_compartir: 1 });
+    // El texto revisado no queda guardado: ni en KV ni en los contadores.
+    expect(kv.data.size).toBe(0);
+    expect(JSON.stringify([...counters.storage.data])).not.toContain('transfieras');
   });
 
   it('la API devuelve la etiqueta del patrón para el aviso a la familia', async () => {
@@ -140,12 +143,12 @@ describe('rutas web del Worker', () => {
   });
 
   it('cuenta los avisos a la familia y rechaza eventos desconocidos', async () => {
-    const kv = memoryKv();
-    const env = { GUARDIAN_KV: kv } as unknown as Env;
+    const counters = fakeCounters();
+    const env = { GUARDIAN_KV: memoryKv(), CONTADORES: counters.ns } as unknown as Env;
     const ok = await worker.fetch(new Request('https://w.dev/api/evento', { method: 'POST', body: JSON.stringify({ tipo: 'compartir' }) }), env, ctx);
     expect(ok.status).toBe(204);
     const bad = await worker.fetch(new Request('https://w.dev/api/evento', { method: 'POST', body: JSON.stringify({ tipo: 'otro' }) }), env, ctx);
     expect(bad.status).toBe(400);
-    expect(JSON.parse([...kv.data.values()][0]!)).toMatchObject({ aviso_familia: 1 });
+    expect(counters.storage.data.get(`st:web:${new Date().toISOString().slice(0, 10)}`)).toEqual({ aviso_familia: 1 });
   });
 });

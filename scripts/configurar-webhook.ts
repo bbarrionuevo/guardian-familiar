@@ -51,6 +51,7 @@ await call('setMyCommands', {
     { command: 'ayuda', description: 'Cómo funciona' },
     { command: 'privacidad', description: 'Qué hago con sus mensajes' },
     { command: 'desvincular', description: 'Borrar los vínculos' },
+    { command: 'borrar', description: 'Borrar todos sus datos' },
     { command: 'lingua', description: 'Passa all’italiano' },
   ],
   language_code: 'es',
@@ -62,6 +63,7 @@ await call('setMyCommands', {
     { command: 'aiuto', description: 'Come funziona' },
     { command: 'privacy', description: 'Cosa faccio con i tuoi messaggi' },
     { command: 'scollega', description: 'Cancellare i collegamenti' },
+    { command: 'cancella', description: 'Cancellare tutti i tuoi dati' },
     { command: 'idioma', description: 'Cambiar a español' },
   ],
   language_code: 'it',
@@ -74,6 +76,7 @@ await call('setMyCommands', {
     { command: 'ayuda', description: 'Cómo funciona' },
     { command: 'privacidad', description: 'Qué hago con sus mensajes' },
     { command: 'desvincular', description: 'Borrar los vínculos' },
+    { command: 'borrar', description: 'Borrar todos sus datos' },
     { command: 'lingua', description: 'Italiano' },
   ],
 });

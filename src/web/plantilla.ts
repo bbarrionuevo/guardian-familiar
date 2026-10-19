@@ -196,8 +196,8 @@ const PRIVACY: Record<Lang, { title: string; description: string; paragraphs: st
     paragraphs: [
       'Pausa revisa los mensajes que usted pega, sube o comparte para decirle si tienen señales de estafa. No los guarda: se analizan en el momento y se descartan.',
       'Para revisarlos usamos reglas propias y, cuando hace falta, la inteligencia artificial de Anthropic (Claude). El texto o la imagen se envían a Anthropic solo para esa revisión. Según sus condiciones para empresas, Anthropic no usa estos datos para entrenar su IA.',
-      'La web y el bot funcionan sobre Cloudflare. Para evitar abusos contamos cuántas revisiones se hacen por día desde cada conexión; ese contador se borra solo a los dos días. También guardamos totales por día (cuántas revisiones y de qué nivel), sin el contenido.',
-      'En el bot de Telegram guardamos solo su idioma, su nombre de Telegram y, si usted lo pide, con qué familiar está vinculado. Con el comando /desvincular se borran los vínculos.',
+      'La web y el bot funcionan sobre Cloudflare. Para evitar abusos contamos cuántas revisiones se hacen por día desde cada conexión; ese contador se borra cada noche. También guardamos totales por día (cuántas revisiones y de qué nivel), sin el contenido.',
+      'En el bot guardamos solo su idioma, su nombre (en WhatsApp, también su número) y, si usted lo pide, con qué familiar está vinculado. Con /desvincular se borran los vínculos y con /borrar, todos sus datos. Si no usa Pausa durante 13 meses, sus datos se borran solos.',
       'No usamos cookies de publicidad ni de seguimiento.',
     ],
   },
@@ -207,8 +207,8 @@ const PRIVACY: Record<Lang, { title: string; description: string; paragraphs: st
     paragraphs: [
       'Pausa controlla i messaggi che incolli, carichi o condividi per dirti se hanno segnali di truffa. Non li conserva: vengono analizzati al momento e poi scartati.',
       'Per controllarli usiamo regole nostre e, quando serve, l’intelligenza artificiale di Anthropic (Claude). Il testo o l’immagine vengono inviati ad Anthropic solo per quel controllo. Secondo le sue condizioni per le aziende, Anthropic non usa questi dati per addestrare la sua IA.',
-      'Il sito e il bot funzionano su Cloudflare. Per evitare abusi contiamo quanti controlli arrivano ogni giorno da ciascuna connessione; il contatore si cancella da solo dopo due giorni. Conserviamo anche i totali giornalieri (quanti controlli e di che livello), senza il contenuto.',
-      'Nel bot di Telegram conserviamo solo la tua lingua, il tuo nome su Telegram e, se lo chiedi, a quale familiare sei collegato. Con il comando /scollega i collegamenti vengono cancellati.',
+      'Il sito e il bot funzionano su Cloudflare. Per evitare abusi contiamo quanti controlli arrivano ogni giorno da ciascuna connessione; il contatore si cancella ogni notte. Conserviamo anche i totali giornalieri (quanti controlli e di che livello), senza il contenuto.',
+      'Nel bot conserviamo solo la tua lingua, il tuo nome (su WhatsApp, anche il tuo numero) e, se lo chiedi, a quale familiare sei collegato. Con /scollega si cancellano i collegamenti e con /cancella tutti i tuoi dati. Se non usi Pausa per 13 mesi, i tuoi dati si cancellano da soli.',
       'Non usiamo cookie pubblicitari né di tracciamento.',
     ],
   },

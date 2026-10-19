@@ -90,14 +90,18 @@ Las respuestas a quien le escribe al bot no tienen costo en la tarifa actual de 
   - `/ayuda` o `/aiuto`: explica cómo usar el bot.
   - `/privacidad` o `/privacy`: dice qué se hace con los mensajes.
   - `/desvincular` o `/scollega`: borra los vínculos con la familia.
+  - `/borrar` o `/cancella`: borra todos los datos de la persona. Además, quien no usa Pausa en 13 meses se borra solo.
   - `/idioma` (español) o `/lingua` (italiano): cambia el idioma.
-- **Métricas de validación:** abrí `https://<tu-worker>.workers.dev/api/metricas?clave=<METRICAS_CLAVE>`. Muestra, por día de las últimas dos semanas:
-  - En Telegram: revisiones, cuántas por nivel, alertas enviadas y usuarios activos.
-  - En la web: revisiones, cuántas llegaron por «Compartir», avisos a la familia e instalaciones.
+- **Métricas de validación:** abrí `https://pausa.briaan-b.workers.dev/api/metricas?clave=<METRICAS_CLAVE>`. Muestra, por día de las últimas dos semanas:
+  - `bot` (Telegram y WhatsApp): revisiones, cuántas por nivel y por canal, con imagen o audio, alertas enviadas y usuarios activos.
+  - `web`: revisiones, cuántas llegaron por «Compartir», avisos a la familia e instalaciones.
 
 ## Costos estimados
 
-- **Cloudflare:** gratis. El plan gratis permite 1000 escrituras por día en KV, unas 450 revisiones diarias. Si se pasa, el plan pago cuesta US$ 5 por mes.
+- **Cloudflare:** gratis.
+  - Los contadores (límites diarios y métricas) van en un Durable Object, con 100.000 escrituras por día en el plan gratis: alcanza para decenas de miles de revisiones diarias.
+  - KV guarda solo usuarios y vínculos. Escribe al registrarse alguien, al vincular y una vez por mes por persona; el plan gratis permite 1000 escrituras por día.
+  - Si algo de eso se pasa, igual se responde: un contador o un registro que no se puede guardar nunca frena una revisión. El plan pago cuesta US$ 5 por mes.
 - **Claude Haiku 5.5** (el que usa el bot): menos de US$ 0,001 por revisión que llega a la IA, algo más con capturas de pantalla.
 - **Claude Opus 5.5:** alrededor de US$ 0,01 a 0,02 por revisión. En la evaluación del 19/10/2026 acertó igual que Haiku.
 - La página web tiene un límite de 20 revisiones con IA por día y por IP. Pasado ese límite, responde solo con las reglas.

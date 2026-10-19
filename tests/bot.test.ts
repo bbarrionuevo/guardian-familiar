@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { keys, MemoryStore, type UserRecord } from '../src/bot/almacen';
-import { handleUpdate, type BotDeps, type DayStats } from '../src/bot/bot';
+import { handleUpdate, type BotDeps } from '../src/bot/bot';
+import { createCounters, MemoryCounterStorage, memoryCounters } from '../src/bot/contadores';
 import { PROFILE, TEXTS } from '../src/bot/textos';
 import type { TelegramApi, TgMessage } from '../src/bot/telegram-api';
 
@@ -24,14 +25,24 @@ function setup(over: Partial<BotDeps> = {}) {
     },
   };
   const store = new MemoryStore();
-  const deps: BotDeps = { api, store, ai: null, transcriber: null, botUsername: 'GuardianBot', now: () => new Date('2026-10-18T10:00:00Z'), ...over };
+  const counterStorage = new MemoryCounterStorage();
+  const deps: BotDeps = {
+    api,
+    store,
+    counters: memoryCounters(counterStorage),
+    ai: null,
+    transcriber: null,
+    botUsername: 'GuardianBot',
+    now: () => new Date('2026-10-18T10:00:00Z'),
+    ...over,
+  };
   let id = 1;
   const send = (chatId: number, msg: Partial<TgMessage>, lang = 'es', name = 'Rosa') =>
     handleUpdate(
       { update_id: id++, message: { message_id: id, chat: { id: chatId, type: 'private' }, from: { id: chatId, first_name: name, language_code: lang }, ...msg } },
       deps,
     );
-  return { sent, store, files, send, deps };
+  return { sent, store, counterStorage, files, send, deps };
 }
 
 const SCAM = 'Hola ma, se me rompió el celu, este es mi número nuevo. Necesito que me transfieras hoy, es urgente';
@@ -139,14 +150,51 @@ describe('bot', () => {
   });
 
   it('no guarda el texto revisado, solo contadores', async () => {
-    const { send, store } = setup();
+    const { send, store, counterStorage } = setup();
     await send(1, { text: SCAM });
-    const stats = await store.get<DayStats>(keys.stats('2026-10-18'));
-    expect(stats).toMatchObject({ checks: 1, alto: 1 });
-    expect(await store.count('cnt:2026-10-18:')).toBe(1);
+    await send(1, { text: 'hola' });
+    expect(counterStorage.data.get('st:bot:2026-10-18')).toMatchObject({ revisiones: 2, alto: 1, telegram: 2, usuarios: 1 });
+    expect(counterStorage.data.get('u:2026-10-18:1')).toBe(2);
     const saved = [...(store as unknown as { data: Map<string, { value: string }> }).data.values()].map((v) => v.value).join(' ');
     expect(saved.length).toBeGreaterThan(0);
-    expect(saved).not.toContain('transfieras');
+    expect(saved + JSON.stringify([...counterStorage.data])).not.toContain('transfieras');
+  });
+
+  it('guarda el mes de uso, para borrar solo a quien no usa Pausa en un año', async () => {
+    const { send, store } = setup();
+    await send(1, { text: 'hola' });
+    expect((await store.get<UserRecord>(keys.user({ channel: 'telegram', id: '1' })))?.visto).toBe('2026-10');
+  });
+
+  it('/borrar elimina el registro y el vínculo en el registro del familiar', async () => {
+    const { sent, send, store } = setup();
+    await send(100, { text: '/familia' }, 'es', 'Lucía');
+    const code = /start=fam_([A-Za-z0-9]+)/.exec(sent.at(-1)!.text)![1];
+    await send(1, { text: `/start fam_${code}` }, 'es', 'Rosa');
+    await send(1, { text: '/borrar' });
+    expect(sent.at(-1)?.text).toContain('borré todos sus datos');
+    expect(await store.get(keys.user({ channel: 'telegram', id: '1' }))).toBeNull();
+    expect((await store.get<UserRecord>(keys.user({ channel: 'telegram', id: '100' })))?.protects).toEqual([]);
+  });
+
+  it('responde aunque no pueda guardar nada (por ejemplo, sin escrituras de KV en el día)', async () => {
+    const broken = new MemoryStore();
+    broken.put = async () => {
+      throw new Error('KV put() limit exceeded for the day.');
+    };
+    const { sent, send } = setup({ store: broken });
+    await send(1, { text: SCAM });
+    expect(sent.at(-1)?.text).toContain('RIESGO ALTO');
+  });
+
+  it('si fallan los contadores, la revisión sigue igual', async () => {
+    const { sent, send } = setup({
+      counters: createCounters(async () => {
+        throw new Error('Durable Object caído');
+      }),
+    });
+    await send(1, { text: SCAM });
+    expect(sent.at(-1)?.text).toContain('RIESGO ALTO');
   });
 
   it('ignora grupos y cambia de idioma con /lingua', async () => {

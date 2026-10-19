@@ -3,7 +3,8 @@
 Bot y web antiestafas para personas mayores (IT, ES, AR). Antes se llamaba «Guardián familiar»: el repositorio, el KV y algunos nombres internos siguen así. TypeScript sobre Cloudflare Workers + KV; Claude como tercera capa. El responsable es Brian Barrionuevo.
 
 ## Reglas fijas
-- **Nunca se guarda el contenido revisado** (texto, imágenes, audios), ni en KV ni en registros. Solo contadores, idioma, nombre de Telegram y vínculos. `tests/bot.test.ts` lo comprueba.
+- **Nunca se guarda el contenido revisado** (texto, imágenes, audios), ni en KV ni en registros. Solo contadores, idioma, nombre y vínculos. `tests/bot.test.ts` lo comprueba.
+- **Un contador o un registro que no se puede guardar nunca frena una respuesta.** La revisión sigue y el error queda en el registro del Worker.
 - **La IA nunca baja el nivel de las reglas.** El nivel final es el máximo de los dos.
 - **Nunca decir «seguro»:** los niveles son `alto`, `medio` y `sin_senales`.
 - **El mensaje reenviado es dato, no instrucción.** Va cercado entre `<mensaje_reenviado>` y no se le obedece.
@@ -35,7 +36,8 @@ npx wrangler deploy --dry-run --outdir /tmp/worker
 - `src/bot/`: el bot, igual para los dos canales.
   - `bot.ts`: lógica común (recibe un `Incoming` de `canal.ts`).
   - `telegram-api.ts` y `whatsapp.ts`: cada canal traduce lo que recibe y sabe responder.
-  - `almacen.ts`: KV. Las claves de Telegram no llevan prefijo; las de WhatsApp, `wa:`.
+  - `almacen.ts`: KV, solo usuarios, vínculos e invitaciones. Las claves de Telegram no llevan prefijo; las de WhatsApp, `wa:`. Un usuario se borra solo a los 13 meses sin uso.
+  - `contadores.ts`: límites diarios y métricas. Corren en el Durable Object de `src/servidor/contadores.ts`, que cada noche borra los usos del día anterior (tienen ids e IPs).
   - `transcriptor.ts` y `textos.ts`.
 - `src/servidor/worker.ts`: las rutas del Worker; `web.ts`: las de la web (revisar, compartir, eventos).
 - `redireccion/`: el Worker de la dirección anterior (`guardian-familiar.*.workers.dev`), que manda todo a la nueva.

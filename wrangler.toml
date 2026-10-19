@@ -19,6 +19,16 @@ id = "KV_ID_PENDIENTE"
 [ai]
 binding = "AI"
 
+# Contadores (límites diarios y métricas) en un Durable Object con SQLite, que entra en el plan
+# gratis: 100.000 escrituras por día, contra 1000 de KV. La clase está en src/servidor/contadores.ts.
+[[durable_objects.bindings]]
+name = "CONTADORES"
+class_name = "Contadores"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Contadores"]
+
 [vars]
 BOT_USERNAME = "BOT_USERNAME_PENDIENTE"
 GUARDIAN_MODELO = "claude-haiku-5-5"

@@ -1,6 +1,6 @@
 // Lógica del bot, igual para Telegram y WhatsApp: comandos, vínculo familiar y revisión de
 // mensajes. Cada canal traduce lo que recibe a un Incoming (canal.ts). No guarda el contenido
-// de lo que revisa: solo contadores por día.
+// de lo que revisa: solo contadores por día (contadores.ts).
 
 import { analyze, type AnalyzeInput } from '../motor/analizar';
 import type { AiClassifier, ImageMediaType } from '../motor/ia';
@@ -9,6 +9,7 @@ import { familyAlertParts, renderFamilyAlert, renderVerdict } from '../motor/res
 import type { Lang } from '../motor/tipos';
 import { keys, linkAddress, sameAddress, type Invite, type Link, type Store, type UserRecord } from './almacen';
 import type { Address, Channel, Incoming, Messenger } from './canal';
+import { counterKeys, type Counters } from './contadores';
 import { telegramIncoming, telegramMessenger, toBase64, type TelegramApi, type TgUpdate } from './telegram-api';
 import { COMMANDS, TEXTS } from './textos';
 import type { Transcriber } from './transcriptor';
@@ -16,6 +17,7 @@ import type { Transcriber } from './transcriptor';
 export interface CoreDeps {
   messengers: Partial<Record<Channel, Messenger>>;
   store: Store;
+  counters: Counters;
   ai: AiClassifier | null;
   transcriber: Transcriber | null;
   now?: () => Date;
@@ -28,23 +30,14 @@ export const MAX_IMAGE_BYTES = 3_500_000;
 const MAX_AUDIO_BYTES = 10_000_000;
 const MAX_AUDIO_SECONDS = 180;
 const INVITE_TTL = 7 * 24 * 3600;
-const DAILY_TTL = 40 * 24 * 3600;
-const STATS_TTL = 400 * 24 * 3600;
+// Quien no usa Pausa en 13 meses se borra solo: cada mes que escribe, el plazo vuelve a empezar.
+const USER_TTL = 400 * 24 * 3600;
 const MAX_GUARDIANS = 5;
 const IMAGE_TYPES: ImageMediaType[] = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 const INVITE_TEXT = /^(?:\/start\s+)?fam_([A-Za-z0-9]{6,32})$/;
 
-export interface DayStats {
-  checks: number;
-  alto: number;
-  medio: number;
-  sin_senales: number;
-  imagen: number;
-  audio: number;
-  alertas: number;
-}
-
 const dayOf = (d: Date) => d.toISOString().slice(0, 10);
+const monthOf = (d: Date) => d.toISOString().slice(0, 7);
 const cleanName = (name: string | undefined) => (name ?? '').replace(/\s+/g, ' ').trim().slice(0, 40) || '—';
 const toLink = (a: Address, name: string): Link => ({ chatId: a.channel === 'telegram' ? Number(a.id) : a.id, name, channel: a.channel });
 
@@ -54,20 +47,23 @@ function newCode(): string {
   return [...bytes].map((b) => alphabet[b % alphabet.length]).join('');
 }
 
-async function loadUser(store: Store, msg: Incoming): Promise<{ user: UserRecord; isNew: boolean }> {
-  const key = keys.user(msg.from);
-  const existing = await store.get<UserRecord>(key);
+// Guarda el registro con el mes en que se usó por última vez y el plazo de borrado.
+async function saveUser(deps: CoreDeps, a: Address, user: UserRecord): Promise<void> {
+  user.visto = monthOf(deps.now?.() ?? new Date());
+  await deps.store.put(keys.user(a), user, USER_TTL);
+}
+
+async function loadUser(deps: CoreDeps, msg: Incoming): Promise<{ user: UserRecord; isNew: boolean }> {
+  const existing = await deps.store.get<UserRecord>(keys.user(msg.from));
   const name = cleanName(msg.name);
-  if (existing) {
-    if (msg.name && existing.name !== name) {
-      existing.name = name;
-      await store.put(key, existing);
-    }
-    return { user: existing, isNew: false };
+  const user = existing ?? { lang: langFromCode(msg.langCode), name, guardians: [], protects: [] };
+  const month = monthOf(deps.now?.() ?? new Date());
+  if (!existing || (msg.name && user.name !== name) || user.visto !== month) {
+    user.name = name === '—' && existing ? user.name : name;
+    // Si no se puede guardar (por ejemplo, el límite diario de KV), igual se responde.
+    await saveUser(deps, msg.from, user).catch((err: Error) => deps.log?.(`usuario: ${err.message}`));
   }
-  const user: UserRecord = { lang: langFromCode(msg.langCode), name, guardians: [], protects: [] };
-  await store.put(key, user);
-  return { user, isNew: true };
+  return { user, isNew: !existing };
 }
 
 // Telegram: el Worker llama a esta función con cada actualización.
@@ -88,7 +84,7 @@ export async function handleUpdate(update: TgUpdate, deps: BotDeps): Promise<voi
 export async function handleIncoming(msg: Incoming, deps: CoreDeps): Promise<void> {
   const out = deps.messengers[msg.from.channel];
   if (!out) return;
-  const { user, isNew } = await loadUser(deps.store, msg);
+  const { user, isNew } = await loadUser(deps, msg);
   const text = msg.text.trim();
 
   const invite = msg.forwarded ? null : INVITE_TEXT.exec(text);
@@ -132,19 +128,16 @@ async function handleCommand(from: Address, user: UserRecord, text: string, deps
         await out.send(from.id, t.nothingToUnlink);
         return;
       }
-      // Se borra el vínculo de los dos lados.
-      for (const other of [...user.guardians, ...user.protects]) {
-        const key = keys.user(linkAddress(other));
-        const rec = await store.get<UserRecord>(key);
-        if (!rec) continue;
-        rec.guardians = rec.guardians.filter((g) => !sameAddress(linkAddress(g), from));
-        rec.protects = rec.protects.filter((p) => !sameAddress(linkAddress(p), from));
-        await store.put(key, rec);
-      }
-      user.guardians = [];
-      user.protects = [];
-      await store.put(keys.user(from), user);
+      await removeLinks(from, user, deps);
+      await saveUser(deps, from, user);
       await out.send(from.id, t.unlinked);
+      return;
+    }
+    case 'delete': {
+      // Borra todo lo que hay de la persona: su registro y los vínculos en los registros de su familia.
+      await removeLinks(from, user, deps);
+      await store.delete(keys.user(from));
+      await out.send(from.id, t.deleted);
       return;
     }
     case 'privacy':
@@ -153,13 +146,27 @@ async function handleCommand(from: Address, user: UserRecord, text: string, deps
     case 'lang_es':
     case 'lang_it': {
       user.lang = cmd === 'lang_it' ? 'it' : 'es';
-      await store.put(keys.user(from), user);
+      await saveUser(deps, from, user);
       await out.send(from.id, TEXTS[user.lang].langSet);
       return;
     }
     default:
       await out.send(from.id, t.help);
   }
+}
+
+// Saca a la persona de los registros de su familia y deja vacíos sus propios vínculos.
+async function removeLinks(from: Address, user: UserRecord, deps: CoreDeps): Promise<void> {
+  for (const other of [...user.guardians, ...user.protects]) {
+    const a = linkAddress(other);
+    const rec = await deps.store.get<UserRecord>(keys.user(a));
+    if (!rec) continue;
+    rec.guardians = rec.guardians.filter((g) => !sameAddress(linkAddress(g), from));
+    rec.protects = rec.protects.filter((p) => !sameAddress(linkAddress(p), from));
+    await deps.store.put(keys.user(a), rec, USER_TTL);
+  }
+  user.guardians = [];
+  user.protects = [];
 }
 
 async function acceptInvite(from: Address, user: UserRecord, code: string, deps: CoreDeps): Promise<void> {
@@ -181,13 +188,12 @@ async function acceptInvite(from: Address, user: UserRecord, code: string, deps:
   const addLink = (list: Link[], link: Link) =>
     [...list.filter((l) => !sameAddress(linkAddress(l), linkAddress(link))), link].slice(-MAX_GUARDIANS);
   user.guardians = addLink(user.guardians, toLink(childAddr, invite.childName));
-  await store.put(keys.user(from), user);
+  await saveUser(deps, from, user);
 
-  const childKey = keys.user(childAddr);
-  const child = await store.get<UserRecord>(childKey);
+  const child = await store.get<UserRecord>(keys.user(childAddr));
   if (child) {
     child.protects = addLink(child.protects, toLink(from, user.name));
-    await store.put(childKey, child);
+    await saveUser(deps, childAddr, child);
   }
   await out.send(from.id, t.linkedParent(invite.childName));
   await deps.messengers[childAddr.channel]?.send(childAddr.id, TEXTS[child?.lang ?? user.lang].linkedChild(user.name));
@@ -208,13 +214,11 @@ async function checkMessage(msg: Incoming, user: UserRecord, deps: CoreDeps): Pr
   const now = deps.now?.() ?? new Date();
   const day = dayOf(now);
   const limit = deps.dailyLimit ?? 30;
-  const countKey = keys.daily(day, from);
-  const used = (await store.get<number>(countKey)) ?? 0;
-  if (used >= limit) {
+  const { ok, used } = await deps.counters.take(counterKeys.user(day, from), limit);
+  if (!ok) {
     await out.send(from.id, t.limit(used));
     return;
   }
-  await store.put(countKey, used + 1, DAILY_TTL);
   await out.typing(from.id);
 
   const input: AnalyzeInput = { text, langHint: user.lang, replyLang: user.lang };
@@ -258,13 +262,15 @@ async function checkMessage(msg: Incoming, user: UserRecord, deps: CoreDeps): Pr
   }
   await out.send(from.id, reply);
 
-  const statsKey = keys.stats(day);
-  const stats = (await store.get<DayStats>(statsKey)) ?? { checks: 0, alto: 0, medio: 0, sin_senales: 0, imagen: 0, audio: 0, alertas: 0 };
-  stats.checks++;
-  stats[verdict.level]++;
-  if (input.image) stats.imagen++;
-  if (input.audio) stats.audio++;
-  stats.alertas += alerts;
-  await store.put(statsKey, stats, STATS_TTL);
+  await deps.counters.add(day, 'bot', {
+    revisiones: 1,
+    [verdict.level]: 1,
+    [from.channel]: 1,
+    imagen: input.image ? 1 : 0,
+    audio: input.audio ? 1 : 0,
+    alertas: alerts,
+    // El primer mensaje del día de cada persona: usuarios activos.
+    usuarios: used === 1 ? 1 : 0,
+  });
   deps.log?.(`revisión ${from.channel}: ${verdict.level} ${verdict.pattern ?? '-'} ${verdict.source}`);
 }

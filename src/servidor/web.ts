@@ -1,7 +1,8 @@
 // Rutas de la web: revisar un mensaje (texto o captura), recibir lo que se comparte desde
-// otra app y contar eventos. No se guarda el contenido revisado: solo contadores por día.
+// otra app y contar eventos. No se guarda el contenido revisado: solo contadores por día
+// (src/bot/contadores.ts).
 
-import { KvStore, type Store } from '../bot/almacen';
+import { counterKeys, dayOf, type Counters } from '../bot/contadores';
 import { toBase64 } from '../bot/telegram-api';
 import { analyze } from '../motor/analizar';
 import type { AiClassifier, ImageMediaType } from '../motor/ia';
@@ -17,37 +18,12 @@ const MAX_IMAGE_BYTES = 3_500_000;
 const WEB_DAILY_LIMIT = 20;
 const IMAGE_TYPES: ImageMediaType[] = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
-export interface WebStats {
-  revisiones: number;
-  alto: number;
-  medio: number;
-  sin_senales: number;
-  imagen: number;
-  desde_compartir: number;
-  aviso_familia: number;
-  instalaciones: number;
-}
-
-const EMPTY_STATS: WebStats = { revisiones: 0, alto: 0, medio: 0, sin_senales: 0, imagen: 0, desde_compartir: 0, aviso_familia: 0, instalaciones: 0 };
-
-const today = () => new Date().toISOString().slice(0, 10);
-
-async function bumpStats(store: Store, change: (s: WebStats) => void) {
-  const key = `stw:${today()}`;
-  const stats = { ...EMPTY_STATS, ...((await store.get<WebStats>(key)) ?? {}) };
-  change(stats);
-  await store.put(key, stats, 400 * 24 * 3600);
-}
-
 // La IA se usa hasta WEB_DAILY_LIMIT veces por día y por conexión; después responden solo las reglas.
-async function aiForRequest(request: Request, store: Store, ai: AiClassifier | null): Promise<AiClassifier | null> {
+async function aiForRequest(request: Request, counters: Counters, ai: AiClassifier | null): Promise<AiClassifier | null> {
   if (!ai) return null;
   const ip = request.headers.get('cf-connecting-ip') ?? 'sin-ip';
-  const key = `web:${today()}:${ip}`;
-  const used = (await store.get<number>(key)) ?? 0;
-  if (used >= WEB_DAILY_LIMIT) return null;
-  await store.put(key, used + 1, 2 * 24 * 3600);
-  return ai;
+  const { ok } = await counters.take(counterKeys.ip(dayOf(Date.now()), ip), WEB_DAILY_LIMIT);
+  return ok ? ai : null;
 }
 
 function decodeBase64Length(b64: string): number {
@@ -57,19 +33,19 @@ function decodeBase64Length(b64: string): number {
 async function runCheck(
   input: { text: string; image: { mediaType: ImageMediaType; base64: string } | null; lang: Lang | null },
   request: Request,
-  store: Store,
+  counters: Counters,
   ai: AiClassifier | null,
   fromShare: boolean,
 ): Promise<Verdict> {
   const verdict = await analyze(
     { text: input.text, image: input.image, langHint: input.lang, replyLang: input.lang },
-    { ai: await aiForRequest(request, store, ai) },
+    { ai: await aiForRequest(request, counters, ai) },
   );
-  await bumpStats(store, (s) => {
-    s.revisiones++;
-    s[verdict.level]++;
-    if (input.image) s.imagen++;
-    if (fromShare) s.desde_compartir++;
+  await counters.add(dayOf(Date.now()), 'web', {
+    revisiones: 1,
+    [verdict.level]: 1,
+    imagen: input.image ? 1 : 0,
+    desde_compartir: fromShare ? 1 : 0,
   });
   return verdict;
 }
@@ -81,7 +57,7 @@ function json(body: unknown, status = 200): Response {
 }
 
 // POST /api/analizar  {texto, idioma, imagen?: {tipo, base64}}
-export async function handleAnalyze(request: Request, kv: KVNamespace, ai: AiClassifier | null): Promise<Response> {
+export async function handleAnalyze(request: Request, counters: Counters, ai: AiClassifier | null): Promise<Response> {
   if (request.method === 'OPTIONS') return new Response(null, { headers: CORS });
   if (request.method !== 'POST') return json({ error: 'método' }, 405);
   const body = (await request.json().catch(() => null)) as { texto?: unknown; idioma?: unknown; imagen?: { tipo?: unknown; base64?: unknown } | null } | null;
@@ -94,7 +70,7 @@ export async function handleAnalyze(request: Request, kv: KVNamespace, ai: AiCla
   }
   if (!text.trim() && !image) return json({ error: 'texto vacío' }, 400);
   const lang = typeof body?.idioma === 'string' ? langFromCode(body.idioma) : null;
-  const verdict = await runCheck({ text, image, lang }, request, new KvStore(kv), ai, false);
+  const verdict = await runCheck({ text, image, lang }, request, counters, ai, false);
   return json({
     nivel: verdict.level,
     patron: verdict.pattern,
@@ -105,7 +81,7 @@ export async function handleAnalyze(request: Request, kv: KVNamespace, ai: AiCla
 }
 
 // POST /es/compartir y /it/compartir: lo que manda Android al elegir «Compartir → Pausa».
-export async function handleShare(request: Request, lang: Lang, kv: KVNamespace, ai: AiClassifier | null, site: SiteConfig): Promise<Response> {
+export async function handleShare(request: Request, lang: Lang, counters: Counters, ai: AiClassifier | null, site: SiteConfig): Promise<Response> {
   if (request.method !== 'POST') return Response.redirect(new URL(`/${lang}/`, request.url).toString(), 303);
   const form = await request.formData().catch(() => null);
   const parts = ['title', 'text', 'url']
@@ -120,7 +96,7 @@ export async function handleShare(request: Request, lang: Lang, kv: KVNamespace,
     if (file.size > MAX_IMAGE_BYTES) imageTooBig = true;
     else image = { mediaType: file.type as ImageMediaType, base64: toBase64(new Uint8Array(await file.arrayBuffer())) };
   }
-  const verdict = await runCheck({ text, image, lang }, request, new KvStore(kv), ai, true);
+  const verdict = await runCheck({ text, image, lang }, request, counters, ai, true);
   let shown = renderVerdict(verdict);
   if (imageTooBig && !text) {
     shown = lang === 'it' ? "L'immagine è troppo grande. Fai uno screenshot del messaggio e condividi quello." : 'La imagen es muy grande. Haga una captura de pantalla del mensaje y comparta esa.';
@@ -131,18 +107,12 @@ export async function handleShare(request: Request, lang: Lang, kv: KVNamespace,
 }
 
 // POST /api/evento {tipo: 'compartir' | 'instalar'}: cuenta clics, sin datos de la persona.
-export async function handleEvent(request: Request, kv: KVNamespace): Promise<Response> {
+export async function handleEvent(request: Request, counters: Counters): Promise<Response> {
   if (request.method !== 'POST') return new Response(null, { status: 405 });
   const body = (await request.json().catch(() => null)) as { tipo?: unknown } | null;
   const tipo = body?.tipo;
   if (tipo !== 'compartir' && tipo !== 'instalar') return new Response(null, { status: 400 });
-  await bumpStats(new KvStore(kv), (s) => {
-    if (tipo === 'compartir') s.aviso_familia++;
-    else s.instalaciones++;
-  });
+  await counters.add(dayOf(Date.now()), 'web', tipo === 'compartir' ? { aviso_familia: 1 } : { instalaciones: 1 });
   return new Response(null, { status: 204 });
 }
 
-export async function webStats(store: Store, day: string): Promise<WebStats | null> {
-  return store.get<WebStats>(`stw:${day}`);
-}

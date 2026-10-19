@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MemoryStore } from '../src/bot/almacen';
 import { handleIncoming, type CoreDeps } from '../src/bot/bot';
+import { memoryCounters } from '../src/bot/contadores';
 import type { Channel, FamilyAlert, Incoming, Messenger } from '../src/bot/canal';
 import { validSignature, whatsappIncoming, whatsappMessenger } from '../src/bot/whatsapp';
 import worker, { type Env } from '../src/servidor/worker';
@@ -70,6 +71,7 @@ describe('familia entre canales', () => {
     const deps: CoreDeps = {
       messengers: { telegram: fakeMessenger('telegram', sent), whatsapp: fakeMessenger('whatsapp', sent) },
       store: new MemoryStore(),
+      counters: memoryCounters(),
       ai: null,
       transcriber: null,
     };
@@ -94,7 +96,7 @@ describe('familia entre canales', () => {
 
   it('la primera vez que alguien escribe por WhatsApp recibe la bienvenida y la revisión', async () => {
     const sent: { channel: Channel; to: string; text: string }[] = [];
-    const deps: CoreDeps = { messengers: { whatsapp: fakeMessenger('whatsapp', sent) }, store: new MemoryStore(), ai: null, transcriber: null };
+    const deps: CoreDeps = { messengers: { whatsapp: fakeMessenger('whatsapp', sent) }, store: new MemoryStore(), counters: memoryCounters(), ai: null, transcriber: null };
     await handleIncoming({ from: { channel: 'whatsapp', id: '393330000000' }, langCode: 'it', text: 'Ciao mamma, ho cambiato numero. Mi serve un bonifico urgente', forwarded: true }, deps);
     expect(sent[0]?.text).toContain('Ciao, sono Pausa');
     expect(sent.at(-1)?.text).toContain('RISCHIO ALTO');

@@ -1,5 +1,6 @@
-// Almacenamiento mínimo: idioma, nombre y vínculos familiares de cada chat, invitaciones
-// y contadores diarios. Nunca se guarda el texto, las fotos ni los audios que se revisan.
+// Almacenamiento mínimo en KV: idioma, nombre y vínculos familiares de cada chat, e invitaciones.
+// Los contadores están en contadores.ts. Nunca se guarda el texto, las fotos ni los audios que se
+// revisan.
 
 import type { Lang } from '../motor/tipos';
 import type { Address, Channel } from './canal';
@@ -8,8 +9,6 @@ export interface Store {
   get<T>(key: string): Promise<T | null>;
   put(key: string, value: unknown, ttlSeconds?: number): Promise<void>;
   delete(key: string): Promise<void>;
-  // Cuántas claves empiezan con el prefijo (para las métricas del día).
-  count(prefix: string): Promise<number>;
 }
 
 export interface Link {
@@ -29,6 +28,8 @@ export interface UserRecord {
   guardians: Link[];
   // A quiénes cuida este usuario (la otra punta del vínculo).
   protects: Link[];
+  // Último mes en que se usó (AAAA-MM). El registro se borra solo a los 13 meses sin uso.
+  visto?: string;
 }
 
 export interface Invite {
@@ -43,9 +44,6 @@ const addressKey = (a: Address) => (a.channel === 'telegram' ? a.id : `wa:${a.id
 export const keys = {
   user: (a: Address) => `u:${addressKey(a)}`,
   invite: (code: string) => `inv:${code}`,
-  // Una clave por chat y día: sirve de límite diario y para contar usuarios activos.
-  daily: (day: string, a: Address) => `cnt:${day}:${addressKey(a)}`,
-  stats: (day: string) => `st:${day}`,
 };
 
 export class MemoryStore implements Store {
@@ -69,12 +67,6 @@ export class MemoryStore implements Store {
   async delete(key: string): Promise<void> {
     this.data.delete(key);
   }
-
-  async count(prefix: string): Promise<number> {
-    let n = 0;
-    for (const key of this.data.keys()) if (key.startsWith(prefix) && (await this.get(key)) !== null) n++;
-    return n;
-  }
 }
 
 export class KvStore implements Store {
@@ -92,16 +84,5 @@ export class KvStore implements Store {
 
   async delete(key: string): Promise<void> {
     await this.kv.delete(key);
-  }
-
-  async count(prefix: string): Promise<number> {
-    let n = 0;
-    let cursor: string | undefined;
-    do {
-      const page = await this.kv.list({ prefix, cursor });
-      n += page.keys.length;
-      cursor = page.list_complete ? undefined : page.cursor;
-    } while (cursor);
-    return n;
   }
 }
