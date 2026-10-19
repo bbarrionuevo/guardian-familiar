@@ -7,6 +7,7 @@
   "license": "UNLICENSED",
   "scripts": {
     "test": "vitest run",
+    "build:web": "tsx scripts/generar-web.ts",
     "typecheck": "tsc --noEmit",
     "evaluar": "tsx scripts/evaluar.ts",
     "check": "tsc --noEmit && vitest run && tsx scripts/evaluar.ts --estricto"

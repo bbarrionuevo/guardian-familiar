@@ -4,6 +4,14 @@ main = "src/servidor/worker.ts"
 compatibility_date = "2025-09-15"
 compatibility_flags = ["nodejs_compat"]
 
+# Páginas, estilos e íconos generados por scripts/generar-web.ts. El Worker atiende primero
+# solo sus rutas; el resto lo sirven los assets.
+[assets]
+directory = "./public"
+binding = "ASSETS"
+not_found_handling = "404-page"
+run_worker_first = ["/api/*", "/telegram/*", "/salud", "/es/compartir", "/it/compartir"]
+
 [[kv_namespaces]]
 binding = "GUARDIAN_KV"
 id = "KV_ID_PENDIENTE"

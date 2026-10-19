@@ -4,3 +4,4 @@ node_modules/
 .env
 *.log
 informes/ultima-evaluacion*.json
+public/

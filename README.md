@@ -6,6 +6,17 @@ Bot que revisa mensajes sospechosos para personas mayores en Italia, España y A
 - Idiomas: italiano (con «tu») y español (con «usted», sirve en España y en Argentina).
 - Canal de prueba: Telegram. WhatsApp necesita la aprobación de Meta y viene después de validar.
 
+## La web
+
+El mismo Worker sirve una web en español (`/es/`) y en italiano (`/it/`), generada con `npm run build:web` en `public/`:
+
+- **Verificador:** se pega el mensaje o se sube una captura, y responde igual que el bot.
+- **App instalable:** en Android, con Chrome, se instala desde el menú. Después, en WhatsApp se mantiene apretado un mensaje y se elige «Compartir → Guardián», sin copiar ni pegar.
+- **Avisar a la familia:** cada resultado de riesgo y cada guía tienen un botón para mandar el aviso a un grupo de WhatsApp. Es la forma de que el sitio se difunda solo.
+- **Guías:** 12 estafas comunes por idioma, con ejemplos reales y sus fuentes, para que lleguen visitas desde Google.
+
+Para cambiar la dirección del sitio (al comprar un dominio), se cambia `SITIO_URL` en `src/web/config.ts`.
+
 ## Cómo decide
 
 1. **Reglas fijas** (`src/motor/reglas.ts`): detectan señales sueltas (pide plata, número nuevo, urgencia, código, enlace…) y las combinan. Ejemplo: «número nuevo» más «pide plata» da riesgo alto.
@@ -48,7 +59,9 @@ Los audios se pasan a texto con Whisper de Cloudflare. No se guarda el texto, la
   - `/privacidad` o `/privacy`: dice qué se hace con los mensajes.
   - `/desvincular` o `/scollega`: borra los vínculos con la familia.
   - `/idioma` (español) o `/lingua` (italiano): cambia el idioma.
-- **Métricas de validación:** abrí `https://<tu-worker>.workers.dev/api/metricas?clave=<METRICAS_CLAVE>`. Muestra, por día de las últimas dos semanas, cuántas revisiones hubo, cuántas por nivel, las alertas enviadas y los usuarios activos.
+- **Métricas de validación:** abrí `https://<tu-worker>.workers.dev/api/metricas?clave=<METRICAS_CLAVE>`. Muestra, por día de las últimas dos semanas:
+  - En Telegram: revisiones, cuántas por nivel, alertas enviadas y usuarios activos.
+  - En la web: revisiones, cuántas llegaron por «Compartir», avisos a la familia e instalaciones.
 
 ## Costos estimados
 

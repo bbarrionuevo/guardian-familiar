@@ -17,7 +17,7 @@ Bot antiestafas para personas mayores (IT, ES, AR). TypeScript sobre Cloudflare 
 
 ## Antes de cada commit
 ```
-npm run typecheck && npm test
+npm run build:web && npm run typecheck && npm test
 npx tsx scripts/evaluar.ts --solo-reglas
 npx tsx scripts/evaluar.ts --solo-reglas --ciego
 npx wrangler deploy --dry-run --outdir /tmp/worker
@@ -35,7 +35,13 @@ npx wrangler deploy --dry-run --outdir /tmp/worker
   - `bot.ts`: lógica.
   - `almacen.ts`: KV.
   - `telegram-api.ts`, `transcriptor.ts` y `textos.ts`.
-- `src/servidor/worker.ts`: las rutas del Worker.
+- `src/servidor/worker.ts`: las rutas del Worker; `web.ts`: las de la web (revisar, compartir, eventos).
+- `src/web/`: la web.
+  - `guias.ts`: el contenido de las guías; los ejemplos salen del banco por id.
+  - `plantilla.ts`: el HTML.
+  - `textos-web.ts`: los textos.
+  - `web/`: estilos, script, service worker e íconos.
+  - `scripts/generar-web.ts` escribe `public/`, que no se sube al repositorio.
 - `data/banco/`: el banco de mensajes.
   - Estafas con fuente: `verbatim` dice si el texto es literal.
   - Legítimos con `max_ok`, el nivel máximo aceptable.

@@ -1,20 +1,25 @@
 // Servidor en Cloudflare Workers.
-//   POST /telegram/webhook  → actualizaciones de Telegram (con la cabecera secreta)
-//   POST /api/analizar      → revisa un texto (para la página web), con límite por IP
-//   GET  /salud             → control de vida
+//   POST /telegram/webhook    → actualizaciones de Telegram (con la cabecera secreta)
+//   POST /api/analizar        → revisa un texto o una captura (web), con límite por conexión
+//   POST /es|it/compartir     → lo que se comparte desde otra app con la app instalada
+//   POST /api/evento          → cuenta clics de «avisar a la familia» e instalaciones
+//   GET  /api/metricas?clave= → números de la validación
+//   GET  /salud               → control de vida
+// El resto (páginas, estilos, íconos) lo sirven los assets de public/.
 
 import { KvStore } from '../bot/almacen';
 import { handleUpdate, type DayStats } from '../bot/bot';
 import { createTelegramApi, type TgUpdate } from '../bot/telegram-api';
 import { createWorkersAiTranscriber } from '../bot/transcriptor';
-import { analyze } from '../motor/analizar';
 import { createClaudeClassifier, type AiClassifier } from '../motor/ia';
-import { langFromCode } from '../motor/normalizar';
-import { renderVerdict } from '../motor/respuestas';
+import { siteConfig } from '../web/config';
 import { telegramHeaderSecret } from './secreto';
+import { handleAnalyze, handleEvent, handleShare, webStats, type WebStats } from './web';
 
 export interface Env {
   GUARDIAN_KV: KVNamespace;
+  ASSETS?: Fetcher;
+  SITIO_URL?: string;
   AI?: { run(model: string, input: Record<string, unknown>): Promise<unknown> };
   BOT_TOKEN: string;
   TELEGRAM_SECRET: string;
@@ -25,9 +30,6 @@ export interface Env {
   // Clave para leer /api/metricas (los números de la validación).
   METRICAS_CLAVE?: string;
 }
-
-const MAX_TEXT = 4000;
-const WEB_DAILY_LIMIT = 20;
 
 const log = (m: string) => console.log(m);
 
@@ -46,8 +48,6 @@ function safeEqual(a: string, b: string): boolean {
 function json(body: unknown, status = 200, extra: Record<string, string> = {}): Response {
   return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json; charset=utf-8', ...extra } });
 }
-
-const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-methods': 'POST, OPTIONS', 'access-control-allow-headers': 'content-type' };
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -74,42 +74,31 @@ export default {
       return new Response('ok');
     }
 
-    if (url.pathname === '/api/analizar') {
-      if (request.method === 'OPTIONS') return new Response(null, { headers: CORS });
-      if (request.method !== 'POST') return json({ error: 'método' }, 405, CORS);
-      const body = (await request.json().catch(() => null)) as { texto?: unknown; idioma?: unknown } | null;
-      const text = typeof body?.texto === 'string' ? body.texto.slice(0, MAX_TEXT) : '';
-      if (!text.trim()) return json({ error: 'texto vacío' }, 400, CORS);
-
-      const store = new KvStore(env.GUARDIAN_KV);
-      const ip = request.headers.get('cf-connecting-ip') ?? 'sin-ip';
-      const key = `web:${new Date().toISOString().slice(0, 10)}:${ip}`;
-      const used = (await store.get<number>(key)) ?? 0;
-      // Pasado el límite se sigue respondiendo, pero solo con las reglas (sin gastar IA).
-      const ai = used < WEB_DAILY_LIMIT ? aiFrom(env) : null;
-      if (ai) await store.put(key, used + 1, 2 * 24 * 3600);
-      const lang = typeof body?.idioma === 'string' ? langFromCode(body.idioma) : null;
-      const verdict = await analyze({ text, langHint: lang, replyLang: lang }, { ai });
-      return json(
-        { nivel: verdict.level, patron: verdict.pattern, fuente: verdict.source, respuesta: renderVerdict(verdict) },
-        200,
-        CORS,
-      );
-    }
+    if (url.pathname === '/api/analizar') return handleAnalyze(request, env.GUARDIAN_KV, aiFrom(env));
+    if (url.pathname === '/api/evento') return handleEvent(request, env.GUARDIAN_KV);
+    const share = /^\/(es|it)\/compartir\/?$/.exec(url.pathname);
+    if (share) return handleShare(request, share[1] as 'es' | 'it', env.GUARDIAN_KV, aiFrom(env), siteConfig(env as unknown as Record<string, string>));
 
     if (url.pathname === '/api/metricas' && request.method === 'GET') {
       const clave = url.searchParams.get('clave') ?? '';
       if (!env.METRICAS_CLAVE || !safeEqual(clave, env.METRICAS_CLAVE)) return new Response('forbidden', { status: 403 });
       const store = new KvStore(env.GUARDIAN_KV);
-      const days: Record<string, DayStats & { usuarios: number }> = {};
+      const days: Record<string, { telegram?: DayStats & { usuarios: number }; web?: WebStats }> = {};
       for (let i = 0; i < 14; i++) {
         const day = new Date(Date.now() - i * 86_400_000).toISOString().slice(0, 10);
         const stats = await store.get<DayStats>(`st:${day}`);
-        if (stats) days[day] = { ...stats, usuarios: await store.count(`cnt:${day}:`) };
+        const web = await webStats(store, day);
+        if (stats || web) {
+          days[day] = {};
+          if (stats) days[day].telegram = { ...stats, usuarios: await store.count(`cnt:${day}:`) };
+          if (web) days[day].web = web;
+        }
       }
       return json(days);
     }
 
+    // En producción los assets responden antes; esto queda para desarrollo y pruebas.
+    if (env.ASSETS) return env.ASSETS.fetch(request);
     return new Response('not found', { status: 404 });
   },
 };
