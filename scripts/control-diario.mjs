@@ -4,7 +4,8 @@
 
 import { writeFileSync } from 'node:fs';
 
-const url = (process.env.WORKER_URL || 'https://pausa.briaan-b.workers.dev').replace(/\/$/, '');
+const url = (process.env.WORKER_URL || 'https://pausa.family').replace(/\/$/, '');
+const workersDev = (process.env.URL_WORKERS || 'https://pausa.briaan-b.workers.dev').replace(/\/$/, '');
 const previous = (process.env.URL_ANTERIOR || 'https://guardian-familiar.briaan-b.workers.dev').replace(/\/$/, '');
 const clave = process.env.METRICAS_CLAVE ?? '';
 const token = process.env.BOT_TOKEN ?? '';
@@ -37,6 +38,15 @@ await check('Reglas, IA y contadores', async () => {
   if (d.reglas !== 'alto') bad.push(`las reglas dan «${d.reglas}» a una estafa clara`);
   if (d.ia !== 'alto') bad.push(`la IA da «${d.ia}» (si dice «error», revisá el saldo y la clave de Anthropic)`);
   if (d.contadores !== 'ok') bad.push(`contadores: ${d.contadores}`);
+  return bad.length ? bad.join('; ') : true;
+});
+
+await check('www y la dirección de workers.dev llevan al dominio', async () => {
+  const bad = [];
+  for (const from of [`https://www.${new URL(url).hostname}`, workersDev]) {
+    const res = await fetch(`${from}/es/`, { redirect: 'manual' });
+    if (res.status !== 301 || res.headers.get('location') !== `${url}/es/`) bad.push(`${from}: HTTP ${res.status} → ${res.headers.get('location')}`);
+  }
   return bad.length ? bad.join('; ') : true;
 });
 

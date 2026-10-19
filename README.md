@@ -5,7 +5,7 @@
 - Niveles: **alto**, **medio** o **sin señales**. El bot nunca dice que algo es «seguro».
 - Idiomas: italiano (con «tu») y español (con «usted», sirve en España y en Argentina).
 - Canal de prueba: Telegram. WhatsApp necesita la aprobación de Meta y viene después de validar.
-- Dirección: https://pausa.briaan-b.workers.dev (`/es/` y `/it/`). La anterior, `guardian-familiar.briaan-b.workers.dev`, redirige a esta con la misma ruta (`redireccion/`, se publica con *Desplegar*).
+- Dirección: **https://pausa.family** (`/es/` y `/it/`), comprado en Cloudflare en la misma cuenta. *Desplegar* lo conecta al Worker (DNS y certificado). `www.pausa.family`, `pausa.briaan-b.workers.dev` y la anterior `guardian-familiar.briaan-b.workers.dev` redirigen al dominio con la misma ruta.
 - Antes se llamaba «Guardián familiar». El repositorio, el espacio KV y algunos nombres internos (`GUARDIAN_KV`, `GUARDIAN_MODELO`) siguen con el nombre viejo: cambiarlos no le sirve a nadie y obliga a tocar los secretos.
 
 ## La web
@@ -19,7 +19,7 @@ El mismo Worker sirve una web en español (`/es/`) y en italiano (`/it/`), gener
 - **Guías:** 12 estafas comunes por idioma, con ejemplos reales y sus fuentes, para que lleguen visitas desde Google.
 - **«Me estafaron»** (`/es/me-estafaron/`, `/it/truffa-cosa-fare/`): qué hacer si ya pagó o dio sus datos, por país (España, Argentina, Italia), con los números para tocar y llamar y las fuentes oficiales. Se enlaza desde cada resultado de riesgo alto, cada guía y el pie de página.
 
-Para cambiar la dirección del sitio (al comprar un dominio), se cambia `SITIO_URL` en `src/web/config.ts`.
+La dirección del sitio está en `src/web/config.ts`; el dominio, en `routes` de `wrangler.toml`.
 
 **Responsable y contacto (falta, y lo pide la ley europea de datos):** en *Settings → Secrets and variables → Actions → Variables*, cargá `SITIO_RESPONSABLE` (tu nombre o el de tu empresa) y `SITIO_CONTACTO` (un email nuevo para Pausa, no el personal). Después, *Desplegar*. Mientras falten, la página de privacidad no muestra ese párrafo. El ícono se dibuja con `node scripts/generar-iconos.mjs`.
 
@@ -67,7 +67,7 @@ El código ya está listo. Mientras falten estas claves, el canal queda apagado 
    - el *App Secret*, en *App settings → Basic*;
    - un token permanente: en la configuración del negocio, *System users*, creá un usuario y generá un token con el permiso `whatsapp_business_messaging`. El token de la página de prueba vence a las 24 horas.
 4. **Webhook.** En *WhatsApp → Configuration*:
-   - poné como URL `https://pausa.briaan-b.workers.dev/whatsapp/webhook`;
+   - poné como URL `https://pausa.family/whatsapp/webhook`;
    - como «Verify token», una contraseña inventada (la misma que va en `WHATSAPP_VERIFY_TOKEN`);
    - suscribite al campo `messages`.
 5. **Plantilla del aviso a la familia (opcional pero recomendable).** WhatsApp solo deja escribirle a alguien que no habló con el bot en las últimas 24 horas con una plantilla aprobada. Creá una de categoría «Utility» llamada `alerta_familia`, en español y en italiano:
@@ -97,7 +97,7 @@ Las respuestas a quien le escribe al bot no tienen costo en la tarifa actual de 
   - `/urgente`, o escribir «ya pagué», «me estafaron», «ho pagato»: los pasos para hacer ya en su país, y aviso a la familia vinculada.
   - `/borrar` o `/cancella`: borra todos los datos de la persona. Además, quien no usa Pausa en 13 meses se borra solo.
   - `/idioma` (español) o `/lingua` (italiano): cambia el idioma.
-- **Métricas de validación:** abrí `https://pausa.briaan-b.workers.dev/api/metricas?clave=<METRICAS_CLAVE>`. Muestra, por día de las últimas dos semanas:
+- **Métricas de validación:** abrí `https://pausa.family/api/metricas?clave=<METRICAS_CLAVE>`. Muestra, por día de las últimas dos semanas:
   - `bot` (Telegram y WhatsApp): revisiones, cuántas por nivel y por canal, con imagen o audio, alertas enviadas y usuarios activos.
   - `web`: revisiones, cuántas llegaron por «Compartir», avisos a la familia e instalaciones.
 

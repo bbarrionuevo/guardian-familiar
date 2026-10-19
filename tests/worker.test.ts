@@ -57,4 +57,17 @@ describe('worker', () => {
     expect(await res.json()).toEqual({ reglas: 'alto', ia: 'sin clave', contadores: 'ok' });
     expect([...counters.storage.data.keys()]).toEqual([]);
   });
+
+  it('www y *.workers.dev llevan al dominio; la API, los webhooks y /salud no se redirigen', async () => {
+    const go = (u: string, init?: RequestInit) => worker.fetch(new Request(u, init), env, ctx());
+    const page = await go('https://pausa.briaan-b.workers.dev/es/familia/?x=1');
+    expect(page.status).toBe(301);
+    expect(page.headers.get('location')).toBe('https://pausa.family/es/familia/?x=1');
+    expect((await go('https://www.pausa.family/it/')).headers.get('location')).toBe('https://pausa.family/it/');
+    expect((await go('https://pausa.briaan-b.workers.dev/salud')).status).toBe(200);
+    expect((await go('https://pausa.briaan-b.workers.dev/telegram/webhook', { method: 'POST', body: '{}' })).status).toBe(403);
+    // En el dominio, y en desarrollo (localhost), no se redirige.
+    expect((await go('https://pausa.family/es/')).status).toBe(404);
+    expect((await go('http://localhost:8787/es/')).status).toBe(404);
+  });
 });

@@ -9,7 +9,7 @@ export interface Env {
 export default {
   fetch(request: Request, env: Env): Response {
     const url = new URL(request.url);
-    const destino = (env.DESTINO || 'https://pausa.briaan-b.workers.dev').replace(/\/$/, '');
+    const destino = (env.DESTINO || 'https://pausa.family').replace(/\/$/, '');
     // 308 conserva el método y el cuerpo (los envíos de «Compartir» de la app ya instalada).
     const status = request.method === 'GET' || request.method === 'HEAD' ? 301 : 308;
     return Response.redirect(`${destino}${url.pathname}${url.search}`, status);

@@ -32,7 +32,7 @@ describe('web generada', () => {
         expect(html).toMatch(/<meta name="description" content="[^"]{60,}">/);
         expect(html).toContain(`rel="canonical" href="https://`);
         const other = lang === 'es' ? 'it' : 'es';
-        expect(html).toContain(`hreflang="${other}" href="https://pausa.briaan-b.workers.dev${guidePath(g, other)}"`);
+        expect(html).toContain(`hreflang="${other}" href="https://pausa.family${guidePath(g, other)}"`);
         expect(html).toContain('<h1>');
         expect(html).toContain('<blockquote>');
         expect(html).toContain('https://wa.me/?text=');
@@ -79,7 +79,7 @@ describe('web generada', () => {
       expect(html).toContain('data-fill=');
       expect(html).toContain('data-checker');
       expect(html).toContain('class="install-btn"');
-      expect(html).toContain(`hreflang="${lang === 'es' ? 'it' : 'es'}" href="https://pausa.briaan-b.workers.dev${other}"`);
+      expect(html).toContain(`hreflang="${lang === 'es' ? 'it' : 'es'}" href="https://pausa.family${other}"`);
       expect(words(html)).toBeGreaterThan(350);
       // Se llega desde el inicio y desde el menú de todas las páginas.
       expect(read(`${lang}/`)).toContain(`href="/${path}"`);

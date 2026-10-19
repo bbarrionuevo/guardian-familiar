@@ -1,4 +1,5 @@
-// Datos del sitio que cambian según dónde se publica. Al comprar un dominio, se cambia SITIO_URL.
+// Datos del sitio que cambian según dónde se publica. La dirección es el dominio propio; otra se
+// puede probar con SITIO_URL.
 export interface SiteConfig {
   url: string;
   botUsername: string;
@@ -11,7 +12,7 @@ export interface SiteConfig {
 
 export function siteConfig(env: Record<string, string | undefined> = {}): SiteConfig {
   return {
-    url: (env.SITIO_URL || 'https://pausa.briaan-b.workers.dev').replace(/\/$/, ''),
+    url: (env.SITIO_URL || 'https://pausa.family').replace(/\/$/, ''),
     botUsername: (env.BOT_USERNAME || 'guardian_familiar_bot').replace(/^@/, ''),
     responsable: env.SITIO_RESPONSABLE?.trim() || undefined,
     contacto: env.SITIO_CONTACTO?.trim() || undefined,

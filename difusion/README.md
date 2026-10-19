@@ -11,7 +11,7 @@ Material para que Pausa llegue a la gente sin publicidad paga. Se prepara una ve
 
 **Antes de mandar nada,** completá lo que está entre corchetes: tu email de contacto de Pausa y la ciudad. Revisá también la cita, que tiene que sonar a vos. No pongas tu email personal.
 
-**Si comprás el dominio,** los QR siguen funcionando, porque la dirección actual va a redirigir al dominio nuevo. Igual conviene rehacer los afiches con la dirección nueva, que es más fácil de leer.
+Los afiches y los textos usan **pausa.family**. Los QR llevan a `https://pausa.family/es/` y `https://pausa.family/it/`.
 
 ## A quién mandarlo
 

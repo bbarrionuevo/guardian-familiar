@@ -7,7 +7,7 @@
 **«Mamma, ho cambiato numero», «Il tuo pacco è in giacenza», «Il tuo conto verrà bloccato».** Sono messaggi che arrivano ogni giorno sui telefoni di milioni di persone. Funzionano perché mettono fretta. Pausa nasce per fermare quell’impulso: prima di rispondere o pagare, si manda il messaggio a Pausa.
 
 **Come funziona.**
-- Sul sito pausa.briaan-b.workers.dev si incolla il messaggio o si carica uno screenshot.
+- Sul sito pausa.family si incolla il messaggio o si carica uno screenshot.
 - Sui telefoni Android Pausa si installa come un’app. Da lì basta tenere premuto il messaggio su WhatsApp e scegliere «Condividi → Pausa».
 - In pochi secondi arriva una risposta semplice: rischio alto, medio o nessun segnale, e una sola cosa da fare. Per esempio: «Non fare il bonifico. Chiama tuo figlio al numero di sempre».
 
@@ -21,6 +21,6 @@
 
 > «Le truffe funzionano perché mettono fretta. Pausa serve a fermarsi un momento: prima di pagare, chiedi a qualcuno di cui ti fidi.» [Citazione da approvare o da sostituire con una tua.]
 
-**Per provarlo:** pausa.briaan-b.workers.dev/it/
-**Per i familiari:** pausa.briaan-b.workers.dev/it/famiglia/
+**Per provarlo:** pausa.family/it/
+**Per i familiari:** pausa.family/it/famiglia/
 **Contatti:** [email di Pausa] · In allegato, il volantino da stampare.

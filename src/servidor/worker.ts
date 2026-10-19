@@ -90,9 +90,21 @@ function json(body: unknown, status = 200, extra: Record<string, string> = {}): 
   return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json; charset=utf-8', ...extra } });
 }
 
+// www.pausa.family y *.workers.dev llevan al dominio, con la misma ruta. La API, los webhooks y
+// /salud responden en cualquier dirección: Telegram o Meta pueden tener guardada otra.
+function canonicalRedirect(request: Request, url: URL, env: Env): Response | null {
+  const home = new URL(siteConfig(env as unknown as Record<string, string>).url);
+  const other = url.hostname.endsWith('.workers.dev') || url.hostname === `www.${home.hostname}`;
+  if (!other || url.hostname === home.hostname) return null;
+  if ((request.method !== 'GET' && request.method !== 'HEAD') || /^\/(api|telegram|whatsapp)\//.test(url.pathname) || url.pathname === '/salud') return null;
+  return Response.redirect(`${home.origin}${url.pathname}${url.search}`, 301);
+}
+
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
+    const redirect = canonicalRedirect(request, url, env);
+    if (redirect) return redirect;
 
     if (url.pathname === '/salud') return json({ ok: true });
 

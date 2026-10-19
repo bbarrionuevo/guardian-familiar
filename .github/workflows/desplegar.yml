@@ -1,9 +1,9 @@
-# Publica el Worker en Cloudflare, conecta el bot de Telegram y deja la dirección anterior
-# (guardian-familiar.<cuenta>.workers.dev) redirigiendo a la nueva.
+# Publica el Worker en Cloudflare con el dominio propio (pausa.family), conecta el bot de Telegram
+# y deja la dirección anterior (guardian-familiar.<cuenta>.workers.dev) redirigiendo al dominio.
 # Necesita estos secretos: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, KV_ID, BOT_TOKEN,
 # BOT_USERNAME, TELEGRAM_SECRET, ANTHROPIC_API_KEY y METRICAS_CLAVE. Opcionales: ANTHROPIC_WORKSPACE_ID
-# (si la clave de Anthropic no pertenece a un workspace) y WORKER_URL:
-# si falta, se usa la dirección *.workers.dev que informa Cloudflare al publicar.
+# (si la clave de Anthropic no pertenece a un workspace) y WORKER_URL: si falta, se usa la
+# dirección de src/web/config.ts (el dominio).
 name: Desplegar
 
 on:
@@ -59,9 +59,11 @@ jobs:
           WORKER_URL: ${{ secrets.WORKER_URL }}
         run: |
           npx wrangler deploy | tee /tmp/deploy.log
-          url="${WORKER_URL:-$(grep -oE 'https://[a-z0-9.-]+\.workers\.dev' /tmp/deploy.log | head -1)}"
-          test -n "$url"
+          url="${WORKER_URL:-$(npx tsx -e "import { siteConfig } from './src/web/config'; console.log(siteConfig().url)")}"
+          workers=$(grep -oE 'https://[a-z0-9.-]+\.workers\.dev' /tmp/deploy.log | head -1)
+          test -n "$url" && test -n "$workers"
           echo "url=${url%/}" >> "$GITHUB_OUTPUT"
+          echo "workers=${workers%/}" >> "$GITHUB_OUTPUT"
       - name: Cargar los secretos del Worker
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
@@ -84,17 +86,25 @@ jobs:
           '
           npx wrangler secret bulk /tmp/secretos.json
           rm /tmp/secretos.json
+      - name: Control de vida
+        env:
+          WORKER_URL: ${{ steps.publicar.outputs.url }}
+        # La primera vez, el certificado del dominio puede tardar unos minutos.
+        run: curl -fsS --retry 20 --retry-delay 15 --retry-all-errors "$WORKER_URL/salud"
       - name: Conectar el bot de Telegram
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           TELEGRAM_SECRET: ${{ secrets.TELEGRAM_SECRET }}
           WORKER_URL: ${{ steps.publicar.outputs.url }}
         run: npx tsx scripts/configurar-webhook.ts
-      - name: Control de vida
+      - name: La dirección *.workers.dev lleva al dominio
         env:
           WORKER_URL: ${{ steps.publicar.outputs.url }}
-        # Una dirección *.workers.dev recién creada puede tardar unos segundos en responder.
-        run: curl -fsS --retry 6 --retry-delay 5 --retry-all-errors "$WORKER_URL/salud"
+          WORKERS: ${{ steps.publicar.outputs.workers }}
+        run: |
+          destino=$(curl -sS -o /dev/null -w '%{http_code} %{redirect_url}' "$WORKERS/es/")
+          echo "$WORKERS/es/ → $destino"
+          [ "$WORKERS" = "$WORKER_URL" ] || [ "$destino" = "301 ${WORKER_URL}/es/" ]
       - name: Redirigir la dirección anterior
         env:
           WORKER_URL: ${{ steps.publicar.outputs.url }}

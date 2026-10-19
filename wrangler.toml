@@ -4,13 +4,21 @@ main = "src/servidor/worker.ts"
 compatibility_date = "2025-09-15"
 compatibility_flags = ["nodejs_compat"]
 
-# Páginas, estilos e íconos generados por scripts/generar-web.ts. El Worker atiende primero
-# solo sus rutas; el resto lo sirven los assets.
+# Dominio propio, comprado en Cloudflare en la misma cuenta: al publicar se crean el DNS y el
+# certificado. www y la dirección *.workers.dev redirigen al dominio (src/servidor/worker.ts).
+workers_dev = true
+routes = [
+  { pattern = "pausa.family", custom_domain = true },
+  { pattern = "www.pausa.family", custom_domain = true },
+]
+
+# Páginas, estilos e íconos generados por scripts/generar-web.ts. El Worker atiende todo primero
+# (para mandar www y *.workers.dev al dominio) y le pasa a los assets lo que no es suyo.
 [assets]
 directory = "./public"
 binding = "ASSETS"
 not_found_handling = "404-page"
-run_worker_first = ["/api/*", "/telegram/*", "/whatsapp/*", "/salud", "/es/compartir", "/it/compartir"]
+run_worker_first = true
 
 [[kv_namespaces]]
 binding = "GUARDIAN_KV"

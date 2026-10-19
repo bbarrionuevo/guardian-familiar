@@ -7,7 +7,7 @@
 **«Hola mamá, cambié de número», «Su paquete está retenido», «Su cuenta será bloqueada».** Son mensajes que llegan todos los días a millones de teléfonos. Funcionan porque meten prisa. Pausa nace para frenar ese impulso: antes de responder o pagar, se le manda el mensaje a Pausa.
 
 **Cómo funciona.**
-- En pausa.briaan-b.workers.dev se pega el mensaje o se sube una captura de pantalla.
+- En pausa.family se pega el mensaje o se sube una captura de pantalla.
 - En los teléfonos Android, Pausa se instala como una app. Después alcanza con mantener apretado el mensaje en WhatsApp y elegir «Compartir → Pausa».
 - En segundos llega una respuesta simple: riesgo alto, medio o sin señales, y una sola cosa para hacer. Por ejemplo: «No transfiera nada. Llame a su hijo al número de siempre».
 
@@ -25,6 +25,6 @@
 
 > «Las estafas funcionan porque meten prisa. Pausa sirve para frenar un momento: antes de pagar, pregúntele a alguien de confianza.» [Cita para aprobar o cambiar por una propia.]
 
-**Para probarlo:** pausa.briaan-b.workers.dev/es/
-**Para las familias:** pausa.briaan-b.workers.dev/es/familia/
+**Para probarlo:** pausa.family/es/
+**Para las familias:** pausa.family/es/familia/
 **Contacto:** [email de Pausa] · Adjunto, el afiche para imprimir.

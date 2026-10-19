@@ -5,4 +5,4 @@ main = "worker.ts"
 compatibility_date = "2025-09-15"
 
 [vars]
-DESTINO = "https://pausa.briaan-b.workers.dev"
+DESTINO = "https://pausa.family"
