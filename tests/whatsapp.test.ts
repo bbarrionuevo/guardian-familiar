@@ -34,6 +34,29 @@ describe('mensajes de WhatsApp', () => {
     expect(list[1]).toMatchObject({ text: 'guarda', image: { id: 'img1', mimeType: 'image/jpeg' }, langCode: 'it' });
     expect(list[2]?.audio?.id).toBe('aud1');
     expect(whatsappIncoming({})).toEqual([]);
+    expect(list[0]?.messageId).toBe('1');
+  });
+
+  it('no contesta reacciones, stickers ni avisos del sistema', () => {
+    const list = whatsappIncoming(
+      payload([
+        { from: '549110', id: 'r', type: 'reaction', reaction: { emoji: '👍', message_id: 'x' } },
+        { from: '549110', id: 's', type: 'sticker', sticker: { id: 'st' } },
+        { from: '549110', id: 'y', type: 'system', system: { body: 'cambió de número' } },
+        { from: '549110', id: 'v', type: 'video', video: { id: 'vid' } },
+      ]),
+    );
+    // El video sí llega: se le contesta qué tipo de mensajes se pueden revisar.
+    expect(list.map((m) => m.messageId)).toEqual(['v']);
+  });
+
+  it('marca el mensaje como leído y muestra «escribiendo…»', async () => {
+    const fetchFn = vi.fn().mockResolvedValue(new Response('{}'));
+    const m = whatsappMessenger({ token: 't', phoneNumberId: 'p', number: '549' }, fetchFn as unknown as typeof fetch);
+    await m.typing('549110', 'wamid.1');
+    expect(JSON.parse(fetchFn.mock.calls[0]![1].body)).toEqual({ messaging_product: 'whatsapp', status: 'read', message_id: 'wamid.1', typing_indicator: { type: 'text' } });
+    await m.typing('549110');
+    expect(fetchFn).toHaveBeenCalledTimes(1);
   });
 
   it('comprueba la firma de Meta', async () => {

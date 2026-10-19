@@ -31,6 +31,10 @@ interface WaWebhook {
   entry?: { changes?: { value?: { messages?: WaMessage[]; contacts?: { wa_id: string; profile?: { name?: string } }[] } }[] }[];
 }
 
+// Reacciones con emoji, stickers y avisos del sistema (cambio de número): no son mensajes para
+// revisar, y contestarles «puedo revisar texto…» molesta.
+const IGNORED_TYPES = new Set(['reaction', 'sticker', 'system', 'ephemeral']);
+
 // Meta no informa el idioma: por el prefijo del número, Italia en italiano y el resto en español.
 const langFromNumber = (n: string) => (n.startsWith('39') ? 'it' : 'es');
 
@@ -40,6 +44,7 @@ export function whatsappIncoming(body: unknown): Incoming[] {
     for (const change of entry.changes ?? []) {
       const value = change.value;
       for (const m of value?.messages ?? []) {
+        if (IGNORED_TYPES.has(m.type)) continue;
         const contact = value?.contacts?.find((c) => c.wa_id === m.from);
         const incoming: Incoming = {
           from: { channel: 'whatsapp', id: m.from },
@@ -47,6 +52,7 @@ export function whatsappIncoming(body: unknown): Incoming[] {
           langCode: langFromNumber(m.from),
           text: m.text?.body ?? m.image?.caption ?? m.document?.caption ?? '',
           forwarded: Boolean(m.context?.forwarded || m.context?.frequently_forwarded),
+          messageId: m.id,
         };
         if (m.image) incoming.image = { id: m.image.id, mimeType: m.image.mime_type?.split(';')[0] };
         else if (m.document?.mime_type?.startsWith('image/')) incoming.image = { id: m.document.id, mimeType: m.document.mime_type };
@@ -91,8 +97,12 @@ export function whatsappMessenger(cfg: WhatsAppConfig, fetchFn: FetchFn = fetch,
 
   return {
     send: sendText,
-    // La API no tiene un «escribiendo…» simple: no se muestra nada.
-    typing: async () => {},
+    // Marca el mensaje como leído (tilde azul) y muestra «escribiendo…» hasta la respuesta. Si la
+    // API no lo acepta, se sigue igual.
+    async typing(_to, messageId) {
+      if (!messageId) return;
+      await post({ status: 'read', message_id: messageId, typing_indicator: { type: 'text' } }).catch(() => false);
+    },
     async download(ref, maxBytes) {
       const meta = await fetchFn(`${base}/${ref.id}`, { headers: auth });
       if (!meta.ok) return null;

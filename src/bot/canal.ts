@@ -25,6 +25,8 @@ export interface Incoming {
   imageTooBig?: boolean;
   audio?: MediaRef;
   forwarded: boolean;
+  // Id del mensaje en el canal (WhatsApp lo usa para marcarlo como leído mientras se revisa).
+  messageId?: string;
 }
 
 export interface FamilyAlert {
@@ -37,7 +39,8 @@ export interface FamilyAlert {
 
 export interface Messenger {
   send(to: string, text: string): Promise<boolean>;
-  typing(to: string): Promise<void>;
+  // «Escribiendo…» mientras se revisa. messageId es el mensaje que se está revisando.
+  typing(to: string, messageId?: string): Promise<void>;
   download(ref: MediaRef, maxBytes: number): Promise<Uint8Array | null>;
   // Enlace que abre el bot en este canal con el código de invitación.
   inviteLink(code: string): string;

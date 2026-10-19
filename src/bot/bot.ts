@@ -252,7 +252,7 @@ async function checkMessage(msg: Incoming, user: UserRecord, deps: CoreDeps): Pr
     await out.send(from.id, t.limit(used));
     return;
   }
-  await out.typing(from.id);
+  await out.typing(from.id, msg.messageId);
 
   const input: AnalyzeInput = { text, langHint: user.lang, replyLang: user.lang };
   if (msg.image && IMAGE_TYPES.includes((msg.image.mimeType ?? 'image/jpeg') as ImageMediaType)) {
